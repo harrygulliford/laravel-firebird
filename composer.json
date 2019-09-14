@@ -1,25 +1,37 @@
 {
-    "name": "jacquestvanzuydam/laravel-firebird",
-    "description": "A Firebird database package for the Laravel Framework",
+    "name": "harrygulliford/laravel-firebird",
+    "description": "Firebird database driver for the Laravel Framework",
     "license": "MIT",
-    "version": "1.0.0.0",
-    "authors": [
-        {
-            "name": "Jacques van Zuydam",
-            "email": "jtvanzuydam@gmail.com"
-        }
-    ],
-    "minimum-stability": "dev",
     "require": {
-      "php": ">=5.4.0",
-      "illuminate/support": "5.0.*",
-      "illuminate/container": "5.0.*",
-      "illuminate/database": "5.0.*",
-      "illuminate/events": "5.0.*"
+        "php": ">=7.1",
+        "illuminate/support": "~5.5.0|~5.6.0|~5.7.0|~5.8.0|^6.0",
+        "illuminate/container": "~5.5.0|~5.6.0|~5.7.0|~5.8.0|^6.0",
+        "illuminate/database": "~5.5.0|~5.6.0|~5.7.0|~5.8.0|^6.0",
+        "illuminate/events": "~5.5.0|~5.6.0|~5.7.0|~5.8.0|^6.0"
+    },
+    "require-dev": {
+        "mockery/mockery": "~1.0",
+        "phpunit/phpunit": "~7.0|^8.0",
+        "orchestra/testbench": "~3.7|^4.0"
+    },
+    "archive": {
+        "exclude": ["/tests"]
     },
     "autoload":{
-      "psr-0": {
-        "Firebird\\": "src/"
-      }
+        "psr-4": {
+            "Firebird\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Firebird\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Firebird\\FirebirdServiceProvider"
+            ]
+        }
     }
 }
