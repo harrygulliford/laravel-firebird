@@ -19,6 +19,21 @@ class Firebird2Grammar extends Grammar
         'is distinct from', 'is not distinct from',
     ];
 
+        /**
+     * Wrap a single string in keyword identifiers.
+     *
+     * @param  string  $value
+     * @return string
+     */
+    protected function wrapValue($value)
+    {
+        if ($value !== '*') {
+            return str_replace("'", "''", $value);
+        }
+
+        return $value;
+    }
+
     /**
      * Compile an aggregated select clause.
      *
