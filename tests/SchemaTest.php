@@ -26,6 +26,16 @@ class SchemaTest extends TestCase
     }
 
     /** @test */
+    public function it_has_views(): void
+    {
+        $this->createViews();
+
+        $this->assertTrue(Schema::hasView('view_all_users'));
+
+        $this->assertFalse(Schema::hasView(uniqid('view_')));
+    }
+
+    /** @test */
     public function it_has_columns()
     {
         $this->assertTrue(Schema::hasColumns('users', ['id', 'country']));

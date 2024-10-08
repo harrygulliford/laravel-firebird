@@ -15,6 +15,8 @@ trait MigrateDatabase
         parent::setUp();
 
         if (! MigrationState::$migrated) {
+            $this->dropViews();
+
             $this->dropTables();
             $this->createTables();
 
@@ -96,6 +98,25 @@ trait MigrateDatabase
             // replicate dropIfExists() functionality without using the Schema
             // class.
             if (! Str::contains($e->getMessage(), 'not found')) {
+                throw $e;
+            }
+        }
+    }
+
+    public function createViews(): void
+    {
+        DB::select('CREATE VIEW "view_all_users" AS SELECT * FROM "users"');
+    }
+
+    public function dropViews(): void
+    {
+        try {
+            DB::select('DROP VIEW "view_all_users"');
+        } catch (QueryException $e) {
+            // Suppress the "view does not exist" exception, as we want to
+            // replicate dropIfExists() functionality without using the Schema
+            // class.
+            if (! Str::contains($e->getMessage(), 'does not exist')) {
                 throw $e;
             }
         }
