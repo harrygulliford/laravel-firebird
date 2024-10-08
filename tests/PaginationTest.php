@@ -5,12 +5,13 @@ namespace HarryGulliford\Firebird\Tests;
 use HarryGulliford\Firebird\Tests\Support\MigrateDatabase;
 use HarryGulliford\Firebird\Tests\Support\Models\Order;
 use Illuminate\Support\Facades\DB;
+use PHPUnit\Framework\Attributes\Test;
 
 class PaginationTest extends TestCase
 {
     use MigrateDatabase;
 
-    /** @test */
+    #[Test]
     public function it_can_paginate_results()
     {
         Order::factory()->count(10)->create(['price' => 50]);
@@ -26,7 +27,7 @@ class PaginationTest extends TestCase
         $this->assertTrue($paginator->hasMorePages());
     }
 
-    /** @test */
+    #[Test]
     public function it_can_simple_paginate_results()
     {
         Order::factory()->count(10)->create(['price' => 50]);
@@ -40,7 +41,7 @@ class PaginationTest extends TestCase
         $this->assertTrue($paginator->hasMorePages());
     }
 
-    /** @test */
+    #[Test]
     public function it_can_cursor_paginate_results()
     {
         Order::factory()->count(10)->create(['price' => 50]);

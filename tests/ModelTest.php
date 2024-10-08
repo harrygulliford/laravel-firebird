@@ -5,12 +5,13 @@ namespace HarryGulliford\Firebird\Tests;
 use HarryGulliford\Firebird\Tests\Support\Factories\UserFactory;
 use HarryGulliford\Firebird\Tests\Support\MigrateDatabase;
 use HarryGulliford\Firebird\Tests\Support\Models\User;
+use PHPUnit\Framework\Attributes\Test;
 
 class ModelTest extends TestCase
 {
     use MigrateDatabase;
 
-    /** @test */
+    #[Test]
     public function it_can_create_a_record()
     {
         User::create($fields = [

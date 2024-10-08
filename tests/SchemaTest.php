@@ -6,33 +6,34 @@ use HarryGulliford\Firebird\Tests\Support\MigrateDatabase;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use PHPUnit\Framework\Attributes\Test;
 
 class SchemaTest extends TestCase
 {
     use MigrateDatabase;
 
-    /** @test */
+    #[Test]
     public function it_has_table()
     {
         $this->assertTrue(Schema::hasTable('users'));
         $this->assertFalse(Schema::hasTable('foo'));
     }
 
-    /** @test */
+    #[Test]
     public function it_has_column()
     {
         $this->assertTrue(Schema::hasColumn('users', 'id'));
         $this->assertFalse(Schema::hasColumn('users', 'foo'));
     }
 
-    /** @test */
+    #[Test]
     public function it_has_columns()
     {
         $this->assertTrue(Schema::hasColumns('users', ['id', 'country']));
         $this->assertFalse(Schema::hasColumns('users', ['id', 'foo']));
     }
 
-    /** @test */
+    #[Test]
     public function it_can_create_a_table()
     {
         Schema::dropIfExists('foo');
@@ -49,7 +50,7 @@ class SchemaTest extends TestCase
         Schema::drop('foo');
     }
 
-    /** @test */
+    #[Test]
     public function it_throws_an_exception_for_creating_temporary_tables()
     {
         Schema::dropIfExists('foo');
@@ -68,7 +69,7 @@ class SchemaTest extends TestCase
         $this->assertFalse(Schema::hasTable('foo'));
     }
 
-    /** @test */
+    #[Test]
     public function it_can_drop_table()
     {
         DB::select('RECREATE TABLE "foo" ("id" INTEGER NOT NULL)');
@@ -80,7 +81,7 @@ class SchemaTest extends TestCase
         $this->assertFalse(Schema::hasTable('foo'));
     }
 
-    /** @test */
+    #[Test]
     public function it_can_drop_table_if_exists()
     {
         DB::select('RECREATE TABLE "foo" ("id" INTEGER NOT NULL)');
