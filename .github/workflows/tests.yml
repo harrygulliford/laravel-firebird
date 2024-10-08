@@ -9,7 +9,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest]
-        php: [8.2, 8.1, 8.0, 7.4]
+        php: [8.3, 8.2, 8.1, 8.0, 7.4]
         laravel: [10.*, 9.*, 8.*]
         stability: [prefer-lowest, prefer-stable]
         firebird: [v4.0, v3.0, v2.5.9-sc]
@@ -21,6 +21,8 @@ jobs:
           - laravel: 10.*
             testbench: ^8.0
         exclude:
+          - laravel: 8.*
+            php: 8.3
           - laravel: 8.*
             php: 8.2
           - laravel: 9.*
