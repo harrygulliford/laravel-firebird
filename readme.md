@@ -9,8 +9,8 @@ This package adds support for the Firebird PDO Database Driver in Laravel applic
 
 ## Version Support
 
-- **PHP:** 7.4, 8.0, 8.1, 8.2
-- **Laravel:** 8.x, 9.x, 10.x
+- **PHP:** 7.4, 8.0, 8.1, 8.2, 8.3
+- **Laravel:** 8.x, 9.x, 10.x, 11.x
 - **Firebird:** 2.5, 3.0, 4.0
 
 ## Installation
