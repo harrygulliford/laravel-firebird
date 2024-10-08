@@ -53,7 +53,7 @@ class FirebirdGrammar extends Grammar
      */
     public function compileViews()
     {
-        return 'select rdb$relation_name as "name", '
+        return 'select trim(trailing from rdb$relation_name) as "name", '
         .'rdb$view_source as "definition" '
         .'from rdb$relations '
         .'where rdb$view_blr is not null '
