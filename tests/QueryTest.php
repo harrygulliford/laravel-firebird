@@ -54,9 +54,9 @@ class QueryTest extends TestCase
 
         $this->assertCount(3, (array) $result);
 
-        $this->assertObjectHasAttribute('name', $result);
-        $this->assertObjectHasAttribute('city', $result);
-        $this->assertObjectHasAttribute('country', $result);
+        $this->assertObjectHasProperty('name', $result);
+        $this->assertObjectHasProperty('city', $result);
+        $this->assertObjectHasProperty('country', $result);
 
         $this->assertEquals('Anna', $result->name);
         $this->assertEquals('Sydney', $result->city);
@@ -82,9 +82,9 @@ class QueryTest extends TestCase
 
         $this->assertCount(3, (array) $result);
 
-        $this->assertObjectHasAttribute('USER_NAME', $result);
-        $this->assertObjectHasAttribute('user_city', $result);
-        $this->assertObjectHasAttribute('User_Country', $result);
+        $this->assertObjectHasProperty('USER_NAME', $result);
+        $this->assertObjectHasProperty('user_city', $result);
+        $this->assertObjectHasProperty('User_Country', $result);
 
         $this->assertEquals('Anna', $result->USER_NAME);
         $this->assertEquals('Sydney', $result->user_city);
@@ -1050,11 +1050,11 @@ class QueryTest extends TestCase
             ->get();
 
         $this->assertCount(10, $results);
-        $this->assertObjectHasAttribute('name', $results->first());
-        $this->assertObjectHasAttribute('email', $results->first());
-        $this->assertObjectHasAttribute('state', $results->first());
-        $this->assertObjectHasAttribute('price', $results->first());
-        $this->assertObjectHasAttribute('quantity', $results->first());
+        $this->assertObjectHasProperty('name', $results->first());
+        $this->assertObjectHasProperty('email', $results->first());
+        $this->assertObjectHasProperty('state', $results->first());
+        $this->assertObjectHasProperty('price', $results->first());
+        $this->assertObjectHasProperty('quantity', $results->first());
     }
 
     /** @test */
@@ -1073,11 +1073,11 @@ class QueryTest extends TestCase
         $this->assertCount(2, $results);
         $this->assertEquals(100, $results->first()->price);
 
-        $this->assertObjectHasAttribute('name', $results->first());
-        $this->assertObjectHasAttribute('email', $results->first());
-        $this->assertObjectHasAttribute('state', $results->first());
-        $this->assertObjectHasAttribute('price', $results->first());
-        $this->assertObjectHasAttribute('quantity', $results->first());
+        $this->assertObjectHasProperty('name', $results->first());
+        $this->assertObjectHasProperty('email', $results->first());
+        $this->assertObjectHasProperty('state', $results->first());
+        $this->assertObjectHasProperty('price', $results->first());
+        $this->assertObjectHasProperty('quantity', $results->first());
     }
 
     /** @test */
