@@ -26,8 +26,12 @@ class SchemaTest extends TestCase
     }
 
     /** @test */
-    public function it_has_views(): void
+    public function it_has_view(): void
     {
+        if (version_compare($this->app->version(), '10.34.0', '<')) {
+            $this->markTestSkipped('The hasView method is only available in Laravel 10.34.0 and above.');
+        }
+
         $this->createViews();
 
         $this->assertTrue(Schema::hasView('view_all_users'));
