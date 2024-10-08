@@ -23,6 +23,20 @@ class FirebirdGrammar extends Grammar
     protected $serials = ['bigInteger', 'integer', 'mediumInteger', 'smallInteger', 'tinyInteger'];
 
     /**
+     * Compile the query to determine the tables.
+     *
+     * @return string
+     */
+    public function compileTables()
+    {
+        return 'select trim(trailing from rdb$relation_name) as "name" '
+            .'from rdb$relations '
+            .'where rdb$relation_type = 0 '
+            .'and (rdb$system_flag is null or rdb$system_flag = 0) '
+            .'order by rdb$relation_name';
+    }
+
+    /**
      * Compile the query to determine if a table exists.
      *
      * @return string
