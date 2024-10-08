@@ -29,6 +29,7 @@ jobs:
             php: 8.0
           - laravel: 10.*
             php: 7.4
+      fail-fast: false
 
     name: PHP ${{ matrix.php }}, Laravel ${{ matrix.laravel }}, Firebird ${{ matrix.firebird }}, ${{ matrix.stability }}
 
