@@ -8,9 +8,26 @@ use HarryGulliford\Firebird\Query\Processors\FirebirdProcessor as FirebirdQueryP
 use HarryGulliford\Firebird\Schema\Builder as FirebirdSchemaBuilder;
 use HarryGulliford\Firebird\Schema\Grammars\FirebirdGrammar as FirebirdSchemaGrammar;
 use Illuminate\Database\Connection as DatabaseConnection;
+use Illuminate\Support\Str;
+use PDO;
 
 class FirebirdConnection extends DatabaseConnection
 {
+    /**
+     * Get the server version for the connection.
+     *
+     * @return string
+     */
+    public function getServerVersion(): string
+    {
+        $version = $this->getPdo()->getAttribute(PDO::ATTR_SERVER_VERSION);
+
+        return Str::of($version)
+            ->betweenFirst('LI-V', ' ')
+            ->match('/^\d+\.\d+\.\d+/')
+            ->toString();
+    }
+
     /**
      * Get the default query grammar instance.
      *
