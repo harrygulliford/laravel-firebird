@@ -32,7 +32,7 @@ class FirebirdGrammar extends Grammar
      *
      * @var array
      *
-     * @link https://ib-aid.com/download/docs/firebird-language-reference-2.5/fblangref25-commons-predicates.html
+     * @link https://firebirdsql.org/file/documentation/chunk/en/refdocs/fblangref40/fblangref40-commons.html#fblangref40-commons-compar
      */
     protected $operators = [
         '=', '<', '>', '<=', '>=', '<>', '!=',
@@ -42,7 +42,9 @@ class FirebirdGrammar extends Grammar
     ];
 
     /**
-     * @param  Builder  $query
+     * Compile the "select *" portion of the query.
+     *
+     * @param  \Illuminate\Database\Query\Builder  $query
      * @param  array  $columns
      * @return string|null
      */
@@ -139,7 +141,7 @@ class FirebirdGrammar extends Grammar
     }
 
     /**
-     * Compile SQL statement for a stored procedure.
+     * Compile the select clause for a stored procedure.
      *
      * @param  \Illuminate\Database\Query\Builder  $query
      * @param  string  $procedure

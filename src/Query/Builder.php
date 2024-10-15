@@ -17,10 +17,10 @@ class Builder extends QueryBuilder
     }
 
     /**
-     * Add a from stored procedure clause to the query builder.
+     * Set the stored procedure which the query is targeting.
      *
      * @param  string  $procedure
-     * @param  array  $values
+     * @param  array  $bindings
      * @return \Illuminate\Database\Query\Builder|static
      */
     public function fromProcedure(string $procedure, array $values = [])

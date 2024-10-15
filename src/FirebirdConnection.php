@@ -32,9 +32,9 @@ class FirebirdConnection extends DatabaseConnection
     }
 
     /**
-     * Get a schema builder instance for this connection.
+     * Get a schema builder instance for the connection.
      *
-     * @return \Firebird\Schema\Builder
+     * @return \Illuminate\Database\Schema\Builder
      */
     public function getSchemaBuilder()
     {
@@ -48,7 +48,7 @@ class FirebirdConnection extends DatabaseConnection
     /**
      * Get the default schema grammar instance.
      *
-     * @return \Firebird\Schema\Grammars\FirebirdGrammar
+     * @return \Illuminate\Database\Schema\Grammars\Grammar|null
      */
     protected function getDefaultSchemaGrammar()
     {
@@ -58,7 +58,7 @@ class FirebirdConnection extends DatabaseConnection
     /**
      * Get a new query builder instance.
      *
-     * @return \Firebird\Query\Builder
+     * @return \Illuminate\Database\Query\Builder
      */
     public function query()
     {

@@ -352,7 +352,7 @@ class FirebirdGrammar extends Grammar
     }
 
     /**
-     * Create the column definition for a integer type.
+     * Create the column definition for an integer type.
      *
      * @param  \Illuminate\Support\Fluent  $column
      * @return string
@@ -451,7 +451,7 @@ class FirebirdGrammar extends Grammar
     }
 
     /**
-     * Create the column definition for an enum type.
+     * Create the column definition for an enumeration type.
      *
      * @param  \Illuminate\Support\Fluent  $column
      * @return string
@@ -510,7 +510,7 @@ class FirebirdGrammar extends Grammar
     }
 
     /**
-     * Create the column definition for a date-time type.
+     * Create the column definition for a date-time (with time zone) type.
      *
      * @param  \Illuminate\Support\Fluent  $column
      * @return string
@@ -533,7 +533,7 @@ class FirebirdGrammar extends Grammar
     }
 
     /**
-     * Create the column definition for a time type.
+     * Create the column definition for a time (with time zone) type.
      *
      * @param  \Illuminate\Support\Fluent  $column
      * @return string
@@ -560,7 +560,7 @@ class FirebirdGrammar extends Grammar
     }
 
     /**
-     * Create the column definition for a timestamp type.
+     * Create the column definition for a timestamp (with time zone) type.
      *
      * @param  \Illuminate\Support\Fluent  $column
      * @return string

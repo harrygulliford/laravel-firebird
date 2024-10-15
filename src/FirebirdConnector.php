@@ -15,11 +15,11 @@ class FirebirdConnector extends Connector implements ConnectorInterface
      */
     public function connect(array $config)
     {
-        return $this->createConnection(
-            $this->getDsn($config),
-            $config,
-            $this->getOptions($config)
-        );
+        $dsn = $this->getDsn($config);
+
+        $options = $this->getOptions($config);
+
+        return $this->createConnection($dsn, $config, $options);
     }
 
     /**
@@ -30,26 +30,20 @@ class FirebirdConnector extends Connector implements ConnectorInterface
      */
     protected function getDsn(array $config)
     {
-        extract($config);
+        $dsn = "firebird:dbname={$config['host']}";
 
-        if (! isset($host) || ! isset($database)) {
-            trigger_error('Cannot connect to Firebird Database, no host or database supplied');
+        if (isset($config['port'])) {
+            $dsn .= "/{$config['port']}";
         }
 
-        $dsn = "firebird:dbname={$host}";
+        $dsn .= ":{$config['database']};";
 
-        if (isset($port)) {
-            $dsn .= "/{$port}";
+        if (isset($config['role'])) {
+            $dsn .= "role={$config['role']};";
         }
 
-        $dsn .= ":{$database};";
-
-        if (isset($role)) {
-            $dsn .= "role={$role};";
-        }
-
-        if (isset($charset)) {
-            $dsn .= "charset={$charset};";
+        if (isset($config['charset'])) {
+            $dsn .= "charset={$config['charset']};";
         }
 
         return $dsn;
