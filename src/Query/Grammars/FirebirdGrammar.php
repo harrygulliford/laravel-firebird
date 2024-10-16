@@ -6,6 +6,7 @@ use Illuminate\Database\Query\Builder;
 use Illuminate\Database\Query\Grammars\Grammar;
 use Illuminate\Database\Query\JoinLateralClause;
 use Illuminate\Support\Str;
+use RuntimeException;
 
 class FirebirdGrammar extends Grammar
 {
@@ -73,6 +74,10 @@ class FirebirdGrammar extends Grammar
         }
 
         if ($query->distinct) {
+            if (is_array($query->distinct)) {
+                throw new RuntimeException('This database engine does not support distinct on specific columns.');
+            }
+
             $select .= 'distinct ';
         }
 

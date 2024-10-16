@@ -11,6 +11,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use PHPUnit\Framework\Attributes\Test;
+use RuntimeException;
 
 class QueryTest extends TestCase
 {
@@ -107,6 +108,17 @@ class QueryTest extends TestCase
             ->get();
 
         $this->assertCount(3, $results);
+    }
+
+    #[Test]
+    public function it_throws_an_exception_for_select_distinct_columns()
+    {
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('This database engine does not support distinct on specific columns.');
+
+        DB::table('orders')
+            ->distinct('price')
+            ->get();
     }
 
     #[Test]
