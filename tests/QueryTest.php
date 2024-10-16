@@ -99,7 +99,10 @@ class QueryTest extends TestCase
         Order::factory()->count(10)->create(['price' => 50]);
         Order::factory()->count(5)->create(['price' => 100]);
 
-        $results = DB::table('orders')->select('price')->distinct()->get();
+        $results = DB::table('orders')
+            ->select('price')
+            ->distinct()
+            ->get();
 
         $this->assertCount(3, $results);
     }
@@ -123,10 +126,10 @@ class QueryTest extends TestCase
     #[Test]
     public function it_can_filter_where_without_results()
     {
-        User::factory()->count(25)->create();
+        User::factory()->count(2)->create();
 
         $results = DB::table('users')
-            ->where('id', 26)
+            ->where('name', Str::random(24))
             ->get();
 
         $this->assertCount(0, $results);
@@ -816,25 +819,34 @@ class QueryTest extends TestCase
 
         $results = $query->get();
 
-        $this->assertEquals(10, $results->first()->id);
-        $this->assertEquals(1, $results->last()->id);
+        $lowestId = $results->min('id');
+        $highestId = $results->max('id');
+
+        $this->assertEquals($highestId, $results->first()->id);
+        $this->assertEquals($lowestId, $results->last()->id);
 
         $results = $query->reorder()->get();
 
-        $this->assertEquals(1, $results->first()->id);
-        $this->assertEquals(10, $results->last()->id);
+        $this->assertEquals($lowestId, $results->first()->id);
+        $this->assertEquals($highestId, $results->last()->id);
     }
 
     #[Test]
     public function it_can_pluck()
     {
-        Order::factory()->count(10)->create();
+        $prices = array_map(fn () => fake()->unique()->numberBetween(1, 1000), range(1, 10));
 
-        $results = DB::table('orders')->pluck('id');
+        $this->assertCount(10, $prices);
+
+        Order::factory()
+            ->forEachSequence(...array_map(fn ($price) => ['price' => $price], $prices))
+            ->create();
+
+        $results = DB::table('orders')->pluck('price');
 
         $this->assertCount(10, $results);
-        foreach (range(1, 10) as $expectedId) {
-            $this->assertContains($expectedId, $results);
+        foreach ($prices as $expectedPrice) {
+            $this->assertContains($expectedPrice, $results);
         }
     }
 
@@ -927,9 +939,10 @@ class QueryTest extends TestCase
     #[Test]
     public function it_can_check_exists()
     {
-        User::factory()->create();
+        User::factory()->create(['name' => $name = fake()->name()]);
 
-        $this->assertTrue(DB::table('users')->where('id', 1)->exists());
+        $this->assertTrue(DB::table('users')->where('name', $name)->exists());
+        $this->assertFalse(DB::table('users')->where('name', uniqid('__invalid__'))->exists());
         $this->assertFalse(DB::table('users')->where('id', null)->exists());
     }
 
@@ -1123,13 +1136,13 @@ class QueryTest extends TestCase
         Order::factory()->create();
 
         $latestOrder = DB::table('orders')
-                   ->select('user_id', DB::raw('MAX("created_at") as "last_order_created_at"'))
-                   ->groupBy('user_id');
+            ->select('user_id', DB::raw('MAX("created_at") as "last_order_created_at"'))
+            ->groupBy('user_id');
 
         $user = DB::table('users')
-                ->joinSub($latestOrder, 'latest_order', function ($join) {
-                    $join->on('users.id', '=', 'latest_order.user_id');
-                })->first();
+            ->joinSub($latestOrder, 'latest_order', function ($join) {
+                $join->on('users.id', '=', 'latest_order.user_id');
+            })->first();
 
         $this->assertNotNull($user->last_order_created_at);
     }
@@ -1152,9 +1165,9 @@ class QueryTest extends TestCase
             ->where('price', 100);
 
         $orders = DB::table('orders')
-                    ->where('price', 16)
-                    ->union($first)
-                    ->get();
+            ->where('price', 16)
+            ->union($first)
+            ->get();
 
         $this->assertCount(3, $orders);
     }
@@ -1200,30 +1213,48 @@ class QueryTest extends TestCase
     #[Test]
     public function it_can_offset_results()
     {
-        User::factory()->count(10)->create();
+        $users = User::factory()
+            ->count($count = 10)
+            ->create();
+
+        $startingId = $users->first()->id;
+
+        // Check the starting id is the lowest id.
+        $this->assertEquals($startingId, $users->min('id'));
 
         $results = DB::table('users')
-            ->offset(3)
+            ->offset($offset = 3)
             ->get();
 
-        $this->assertCount(7, $results);
-        $this->assertEquals(4, $results->first()->id);
-        $this->assertEquals(10, $results->last()->id);
+        $this->assertCount($count - $offset, $results);
+
+        $this->assertEquals($startingId + $offset, $results->first()->id);
+        $this->assertEquals($startingId + $count - 1, $results->last()->id);
+
+        // Check the order of the results.
+        $this->assertTrue($results->first()->id < $results->last()->id);
     }
 
     #[Test]
-    public function it_can_offset_and_limit_results()
+    public function it_can_limit_and_offset_results()
     {
         User::factory()->count(10)->create();
 
+        $startingId = DB::table('users')
+            ->value('id');
+
         $results = DB::table('users')
-            ->offset(3)
-            ->limit(3)
+            ->limit($limit = 3)
+            ->offset($offset = 3)
             ->get();
 
         $this->assertCount(3, $results);
-        $this->assertEquals(4, $results->first()->id);
-        $this->assertEquals(6, $results->last()->id);
+
+        $this->assertEquals($startingId + $offset, $results->first()->id);
+        $this->assertEquals($startingId + $offset + ($limit - 1), $results->last()->id);
+
+        // Check the order of the results.
+        $this->assertTrue($results->first()->id < $results->last()->id);
     }
 
     #[Test]
@@ -1231,13 +1262,20 @@ class QueryTest extends TestCase
     {
         User::factory()->count(10)->create();
 
+        $startingId = DB::table('users')
+            ->value('id');
+
         $results = DB::table('users')
-            ->limit(3)
+            ->limit($limit = 3)
             ->get();
 
         $this->assertCount(3, $results);
-        $this->assertEquals(1, $results->first()->id);
-        $this->assertEquals(3, $results->last()->id);
+
+        $this->assertEquals($startingId, $results->first()->id);
+        $this->assertEquals($startingId + ($limit - 1), $results->last()->id);
+
+        // Check the order of the results.
+        $this->assertTrue($results->first()->id < $results->last()->id);
     }
 
     // /** @test */
