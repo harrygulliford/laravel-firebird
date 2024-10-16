@@ -166,9 +166,13 @@ class FirebirdGrammar extends Grammar
      */
     protected function dateBasedWhere($type, Builder $query, $where)
     {
-        $value = $this->parameter($where['value']);
+        $condition = ($type === 'date' || $type === 'time')
+            ? 'cast('.$this->wrap($where['column']).' as '.$type.') '
+            : 'extract('.$type.' from '.$this->wrap($where['column']).') ';
 
-        return 'EXTRACT('.$type.' FROM '.$this->wrap($where['column']).') '.$where['operator'].' '.$value;
+        $condition .= $where['operator'].' '.$this->parameter($where['value']);
+
+        return $condition;
     }
 
     /**
