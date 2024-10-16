@@ -4,10 +4,10 @@
   "license": "MIT",
   "require": {
     "php": "^8.2",
-    "illuminate/support": "^10.34|^11.0",
-    "illuminate/container": "^10.34|^11.0",
-    "illuminate/database": "^10.34|^11.0",
-    "illuminate/events": "^10.34|^11.0"
+    "illuminate/support": "^10.46|^11.0",
+    "illuminate/container": "^10.46|^11.0",
+    "illuminate/database": "^10.46|^11.0",
+    "illuminate/events": "^10.46|^11.0"
   },
   "require-dev": {
     "mockery/mockery": "^1.6",
