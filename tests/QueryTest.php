@@ -1314,6 +1314,127 @@ class QueryTest extends TestCase
     }
 
     #[Test]
+    public function it_can_union_all_queries()
+    {
+        Order::factory()
+            ->count(5)
+            ->state(new Sequence(
+                ['price' => 110],
+                ['price' => 100],
+                ['price' => 100],
+                ['price' => 80],
+                ['price' => 16],
+            ))
+            ->create();
+
+        $first = DB::table('orders')
+            ->where('price', 100);
+
+        $orders = DB::table('orders')
+            ->where('price', 16)
+            ->unionAll($first)
+            ->get();
+
+        $this->assertCount(3, $orders);
+    }
+
+    #[Test]
+    public function it_can_union_queries_with_order_by()
+    {
+        $this->markTestSkipped('The necessary grammar for unionOrders has not been implemented.');
+    }
+
+    #[Test]
+    public function it_can_union_queries_with_limit()
+    {
+        if (version_compare($this->getConnection()->getServerVersion(), '3.0', '<')) {
+            $this->expectException(RuntimeException::class);
+            $this->expectExceptionMessage('This database engine does not support limit on union queries.');
+        }
+
+        Order::factory()
+            ->count(5)
+            ->state(new Sequence(
+                ['price' => 110],
+                ['price' => 100],
+                ['price' => 100],
+                ['price' => 80],
+                ['price' => 16],
+            ))
+            ->create();
+
+        $unionBuilder = DB::table('orders')
+            ->where('price', 80);
+
+        $builder = DB::table('orders')
+            ->whereIn('price', [16, 100, 110])
+            ->union($unionBuilder);
+
+        $this->assertCount(5, (clone $builder)->get());
+        $this->assertCount(3, (clone $builder)->limit(3)->get());
+    }
+
+    #[Test]
+    public function it_can_union_queries_with_offset()
+    {
+        if (version_compare($this->getConnection()->getServerVersion(), '3.0', '<')) {
+            $this->expectException(RuntimeException::class);
+            $this->expectExceptionMessage('This database engine does not support offset on union queries.');
+        }
+
+        Order::factory()
+            ->count(5)
+            ->state(new Sequence(
+                ['price' => 110],
+                ['price' => 100],
+                ['price' => 100],
+                ['price' => 80],
+                ['price' => 16],
+            ))
+            ->create();
+
+        $unionBuilder = DB::table('orders')
+            ->where('price', 80);
+
+        $builder = DB::table('orders')
+            ->whereIn('price', [16, 100, 110])
+            ->union($unionBuilder);
+
+        $this->assertCount(5, (clone $builder)->get());
+        $this->assertCount(2, (clone $builder)->offset(3)->get());
+    }
+
+    #[Test]
+    public function it_can_union_queries_with_limit_and_offset()
+    {
+        if (version_compare($this->getConnection()->getServerVersion(), '3.0', '<')) {
+            $this->expectException(RuntimeException::class);
+            $this->expectExceptionMessage('This database engine does not support offset on union queries.');
+        }
+
+        Order::factory()
+            ->count(5)
+            ->state(new Sequence(
+                ['price' => 110],
+                ['price' => 100],
+                ['price' => 100],
+                ['price' => 80],
+                ['price' => 16],
+            ))
+            ->create();
+
+        $unionBuilder = DB::table('orders')
+            ->where('price', '>', 70);
+
+        $builder = DB::table('orders')
+            ->where('price', 16)
+            ->union($unionBuilder);
+
+        $this->assertCount(5, (clone $builder)->get());
+        $this->assertCount(1, (clone $builder)->offset(2)->limit(1)->get());
+    }
+
+    #[Test]
     public function it_can_group_having()
     {
         User::factory()->count(5)->create(['country' => 'Australia']);
