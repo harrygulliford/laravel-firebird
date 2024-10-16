@@ -36,6 +36,7 @@ class FirebirdGrammar extends Grammar
      */
     protected $operators = [
         '=', '<', '>', '<=', '>=', '<>', '!=',
+        '!<', '!>', '~<', '~>', '^<', '^>', '~=', '^=',
         'like', 'not like', 'between', 'not between',
         'containing', 'not containing', 'starting with', 'not starting with',
         'similar to', 'not similar to', 'is distinct from', 'is not distinct from',
