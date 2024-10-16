@@ -89,11 +89,11 @@ class FirebirdConnection extends DatabaseConnection
      * Execute a stored procedure.
      *
      * @param  string  $procedure
-     * @param  array  $values
+     * @param  array  $bindings
      * @return \Illuminate\Support\Collection
      */
-    public function executeProcedure($procedure, array $values = [])
+    public function executeProcedure(string $procedure, array $bindings = [])
     {
-        return $this->query()->fromProcedure($procedure, $values)->get();
+        return $this->query()->procedure($procedure, $bindings)->get();
     }
 }
