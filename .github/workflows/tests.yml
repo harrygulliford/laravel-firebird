@@ -10,12 +10,14 @@ jobs:
       matrix:
         os: [ubuntu-latest]
         php: [8.3, 8.2]
-        laravel: [11.*]
+        laravel: [11.*, 10.*]
         stability: [prefer-lowest, prefer-stable]
         firebird: [v5.0, v4.0, v3.0, v2.5.9-sc]
         include:
           - laravel: 11.*
             testbench: ^9.0
+          - laravel: 10.*
+            testbench: ^8.0
       fail-fast: false
 
     name: PHP ${{ matrix.php }}, Laravel ${{ matrix.laravel }}, Firebird ${{ matrix.firebird }}, ${{ matrix.stability }}
