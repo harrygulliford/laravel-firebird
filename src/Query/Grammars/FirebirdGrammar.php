@@ -143,7 +143,7 @@ class FirebirdGrammar extends Grammar
      */
     public function compileRandom($seed)
     {
-        return 'RAND()';
+        return 'rand()';
     }
 
     /**
