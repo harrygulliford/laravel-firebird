@@ -159,7 +159,46 @@ class FirebirdGrammar extends Grammar
      */
     protected function wrapUnion($sql)
     {
-        return $sql;
+        return 'select * from ('.$sql.')';
+    }
+
+    /**
+     * Compile the "union" queries attached to the main query.
+     *
+     * @param  \Illuminate\Database\Query\Builder  $query
+     * @return string
+     */
+    protected function compileUnions(Builder $query)
+    {
+        $sql = '';
+
+        foreach ($query->unions as $union) {
+            $sql .= $this->compileUnion($union);
+        }
+
+        if (! empty($query->unionOrders)) {
+            $sql .= ' '.$this->compileOrders($query, $query->unionOrders);
+        }
+
+        // Swap the default order of limit and offset for union queries.
+
+        if (isset($query->unionOffset)) {
+            if ($usesLegacyLimitAndOffset ??= $this->usesLegacyLimitAndOffset()) {
+                throw new RuntimeException('This database engine does not support offset on union queries.');
+            }
+
+            $sql .= ' '.$this->compileOffset($query, $query->unionOffset);
+        }
+
+        if (isset($query->unionLimit)) {
+            if ($usesLegacyLimitAndOffset ??= $this->usesLegacyLimitAndOffset()) {
+                throw new RuntimeException('This database engine does not support limit on union queries.');
+            }
+
+            $sql .= ' '.$this->compileLimit($query, $query->unionLimit);
+        }
+
+        return ltrim($sql);
     }
 
     /**
