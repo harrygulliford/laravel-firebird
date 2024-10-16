@@ -22,8 +22,8 @@ class FirebirdGrammar extends Grammar
         'groups',
         'havings',
         'orders',
-        // 'limit', - Handled in the compileColumns() method.
-        // 'offset', - Handled in the compileColumns() method.
+        'offset',
+        'limit',
         'lock',
     ];
 
@@ -56,21 +56,19 @@ class FirebirdGrammar extends Grammar
             return;
         }
 
-        // In Firebird, the correct syntax for limiting and offsetting rows is
-        // "select first [num_rows] skip [start_row] * from table". Laravel does
-        // not support adding components between the "select" keyword and the
-        // column names, so compile the limit and offset components here. Note
-        // that they are commented out in the $selectComponents class variable.
-        // Reference: http://mc-computing.com/Databases/Firebird/SQL.html
-
         $select = 'select ';
 
-        if ($query->limit) {
-            $select .= $this->compileLimit($query, $query->limit).' ';
+        // Before Firebird v3, the syntax used to limit and offset rows is
+        // "select first [int] skip [int] * from table". Laravel's query builder
+        // doesn't natively support inserting components between "select" and
+        // the column names, so compile the limit and offset here.
+
+        if (isset($query->limit) && $usesLegacyLimitAndOffset ??= $this->usesLegacyLimitAndOffset()) {
+            $select .= $this->compileLegacyLimit($query, $query->limit).' ';
         }
 
-        if ($query->offset) {
-            $select .= $this->compileOffset($query, $query->offset).' ';
+        if (isset($query->offset) && $usesLegacyLimitAndOffset ??= $this->usesLegacyLimitAndOffset()) {
+            $select .= $this->compileLegacyOffset($query, $query->offset).' ';
         }
 
         if ($query->distinct) {
@@ -89,6 +87,22 @@ class FirebirdGrammar extends Grammar
      */
     protected function compileLimit(Builder $query, $limit)
     {
+        if ($this->usesLegacyLimitAndOffset()) {
+            return;
+        }
+
+        return 'fetch first '.(int) $limit.' rows only';
+    }
+
+    /**
+     * Compile the "limit" portions of the query for legacy versions of Firebird.
+     *
+     * @param  \Illuminate\Database\Query\Builder  $query
+     * @param  int  $limit
+     * @return string
+     */
+    protected function compileLegacyLimit(Builder $query, $limit)
+    {
         return 'first '.(int) $limit;
     }
 
@@ -100,6 +114,22 @@ class FirebirdGrammar extends Grammar
      * @return string
      */
     protected function compileOffset(Builder $query, $offset)
+    {
+        if ($this->usesLegacyLimitAndOffset()) {
+            return;
+        }
+
+        return 'offset '.(int) $offset.' rows';
+    }
+
+    /**
+     * Compile the "offset" portions of the query for legacy versions of Firebird.
+     *
+     * @param  \Illuminate\Database\Query\Builder  $query
+     * @param  int  $offset
+     * @return string
+     */
+    protected function compileLegacyOffset(Builder $query, $offset)
     {
         return 'skip '.(int) $offset;
     }
@@ -171,5 +201,15 @@ class FirebirdGrammar extends Grammar
         return Str::replaceLast(
             'as aggregate', 'as "aggregate"', parent::compileAggregate($query, $aggregate)
         );
+    }
+
+    /**
+     * Determine if the database uses the legacy limit and offset syntax.
+     *
+     * @return bool
+     */
+    protected function usesLegacyLimitAndOffset(): bool
+    {
+        return version_compare($this->connection->getServerVersion(), '3.0.0', '<');
     }
 }
