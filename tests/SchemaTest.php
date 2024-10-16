@@ -20,6 +20,39 @@ class SchemaTest extends TestCase
     }
 
     #[Test]
+    public function it_lists_tables()
+    {
+        $tables = Schema::getTableListing();
+
+        $this->assertCount(2, $tables);
+        $this->assertContains('users', $tables);
+        $this->assertContains('orders', $tables);
+    }
+
+    #[Test]
+    public function it_gets_tables()
+    {
+        $tables = Schema::getTables();
+
+        $this->assertIsArray($tables);
+        $this->assertCount(2, $tables);
+
+        foreach ($tables as $table) {
+            $this->assertArrayHasKey('name', $table);
+            $this->assertArrayHasKey('schema', $table);
+            $this->assertArrayHasKey('size', $table);
+            $this->assertArrayHasKey('comment', $table);
+            $this->assertArrayHasKey('collation', $table);
+            $this->assertArrayHasKey('engine', $table);
+
+            $this->assertIsString($table['name']);
+        }
+
+        $this->assertContains('users', array_column($tables, 'name'));
+        $this->assertContains('orders', array_column($tables, 'name'));
+    }
+
+    #[Test]
     public function it_has_column()
     {
         $this->assertTrue(Schema::hasColumn('users', 'id'));
@@ -31,6 +64,23 @@ class SchemaTest extends TestCase
     {
         $this->assertTrue(Schema::hasColumns('users', ['id', 'country']));
         $this->assertFalse(Schema::hasColumns('users', ['id', 'foo']));
+    }
+
+    #[Test]
+    public function it_lists_columns()
+    {
+        $columns = Schema::getColumnListing('users');
+
+        $this->assertCount(10, $columns);
+
+        $expectedColumns = [
+            'id', 'name', 'email', 'city', 'state', 'post_code', 'country',
+            'created_at', 'updated_at', 'deleted_at',
+        ];
+
+        foreach ($expectedColumns as $expectedColumn) {
+            $this->assertContains($expectedColumn, $columns);
+        }
     }
 
     #[Test]
