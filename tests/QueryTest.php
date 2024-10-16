@@ -470,25 +470,52 @@ class QueryTest extends TestCase
     #[Test]
     public function it_can_filter_where_date()
     {
-        $this->markTestSkipped('The necessary grammar for whereDate() has not been implemented.');
+        $now = now()->toImmutable();
+
+        Order::factory()
+            ->forEachSequence(
+                ['created_at' => $now->subYearNoOverflow()],
+                ['created_at' => $now->subYear()],
+                ['created_at' => $now->subMonthNoOverflow()],
+                ['created_at' => $now->subMonth()],
+                ['created_at' => $now->subWeek()],
+                ['created_at' => $now->subDay()],
+                ['created_at' => $now],
+                ['created_at' => $now->addDay()],
+            )
+            ->create();
 
         $results = DB::table('orders')
             ->whereDate('created_at', now())
             ->get();
 
-        $this->assertCount(10, $results);
+        $this->assertCount(1, $results);
     }
 
     #[Test]
     public function it_can_filter_where_time()
     {
-        $this->markTestSkipped('The necessary grammar for whereTime() has not been implemented.');
+        $now = now()->toImmutable();
+
+        // When a DateTimeInterface is passed to whereTime(), the time is
+        // accurate to the second.
+
+        Order::factory()
+            ->forEachSequence(
+                ['created_at' => $now->subHour()],
+                ['created_at' => $now->subMinute()],
+                ['created_at' => $now->subSecond()],
+                ['created_at' => $now->subMillisecond()],
+                ['created_at' => $now],
+                ['created_at' => $now->addSecond()],
+            )
+            ->create();
 
         $results = DB::table('orders')
-            ->whereTime('created_at', now())
+            ->whereTime('created_at', $now)
             ->get();
 
-        $this->assertCount(10, $results);
+        $this->assertCount(2, $results);
     }
 
     #[Test]
