@@ -122,6 +122,37 @@ class QueryTest extends TestCase
     }
 
     #[Test]
+    public function it_can_select_distinct_with_limit()
+    {
+        Order::factory()->count(1)->create(['price' => 10]);
+        Order::factory()->count(10)->create(['price' => 50]);
+        Order::factory()->count(5)->create(['price' => 100]);
+
+        $builder = DB::table('orders')
+            ->select('price')
+            ->distinct();
+
+        $this->assertCount(1, (clone $builder)->limit(1)->get());
+        $this->assertCount(2, (clone $builder)->limit(2)->get());
+        $this->assertCount(3, (clone $builder)->limit(6)->get());
+    }
+
+    #[Test]
+    public function it_can_select_distinct_with_offset()
+    {
+        Order::factory()->count(1)->create(['price' => 10]);
+        Order::factory()->count(10)->create(['price' => 50]);
+        Order::factory()->count(5)->create(['price' => 100]);
+
+        $builder = DB::table('orders')
+            ->select('price')
+            ->distinct();
+
+        $this->assertCount(2, (clone $builder)->offset(1)->get());
+        $this->assertCount(1, (clone $builder)->offset(2)->get());
+    }
+
+    #[Test]
     public function it_can_filter_where_with_results()
     {
         User::factory()->count(5)->create(['name' => 'Frank']);
