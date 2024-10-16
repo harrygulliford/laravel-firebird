@@ -6,6 +6,7 @@ use HarryGulliford\Firebird\Tests\Support\MigrateDatabase;
 use HarryGulliford\Firebird\Tests\Support\Models\Order;
 use HarryGulliford\Firebird\Tests\Support\Models\User;
 use Illuminate\Database\Eloquent\Factories\Sequence;
+use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -1123,6 +1124,41 @@ class QueryTest extends TestCase
     }
 
     #[Test]
+    public function it_can_add_inner_join_lateral()
+    {
+        if (version_compare($this->getConnection()->getServerVersion(), '4.0', '<')) {
+            $this->markTestSkipped('Skipped due to lack of support for lateral joins');
+        }
+
+        $user1 = User::factory()->create();
+        $user2 = User::factory()->create();
+
+        Order::factory()->create(['user_id' => $user1->id, 'price' => 100, 'created_at' => now()->subDays(1)]);
+        Order::factory()->create(['user_id' => $user1->id, 'price' => 150, 'created_at' => now()]);
+        Order::factory()->create(['user_id' => $user2->id, 'price' => 75, 'created_at' => now()->subDays(2)]);
+        Order::factory()->create(['user_id' => $user2->id, 'price' => 50, 'created_at' => now()]);
+
+        $results = DB::table('users')
+            ->joinLateral(function (Builder $builder) {
+                $builder->from('orders')
+                    ->whereColumn('orders.user_id', 'users.id')
+                    ->orderBy('orders.created_at', 'desc')
+                    ->offset(0)
+                    ->limit(1);
+            }, 'latest_order')
+            ->select('users.*', 'latest_order.price as latest_order_price')
+            ->get();
+
+        $this->assertCount(2, $results);
+        $this->assertEquals(150, $results->firstWhere('id', $user1->id)->latest_order_price);
+        $this->assertEquals(50, $results->firstWhere('id', $user2->id)->latest_order_price);
+
+        $this->assertObjectHasProperty('name', $results->first());
+        $this->assertObjectHasProperty('email', $results->first());
+        $this->assertObjectHasProperty('latest_order_price', $results->first());
+    }
+
+    #[Test]
     public function it_can_add_left_join()
     {
         Order::factory()->count(2)->create(['price' => 100]);
@@ -1138,6 +1174,40 @@ class QueryTest extends TestCase
         $this->assertCount(5, $results);
         $this->assertCount(0, $results->whereNull('price'));
         $this->assertCount(3, $results->whereNull('email'));
+    }
+
+    #[Test]
+    public function it_can_add_left_join_lateral()
+    {
+        if (version_compare($this->getConnection()->getServerVersion(), '4.0', '<')) {
+            $this->markTestSkipped('Skipped due to lack of support for lateral joins');
+        }
+
+        $user1 = User::factory()->create(['name' => 'John Doe', 'email' => 'john@example.com']);
+        $user2 = User::factory()->create(['name' => 'Jane Doe', 'email' => 'jane@example.com']);
+
+        Order::factory()->create(['user_id' => $user1->id, 'price' => 100, 'created_at' => now()->subDays(1)]);
+        Order::factory()->create(['user_id' => $user1->id, 'price' => 150, 'created_at' => now()]);
+        Order::factory()->create(['user_id' => $user2->id, 'price' => 50, 'created_at' => now()->subDays(2)]);
+        Order::factory()->create(['user_id' => $user2->id, 'price' => 75, 'created_at' => now()]);
+
+        $results = DB::table('users')
+            ->leftJoinLateral(function (Builder $builder) {
+                $builder->from('orders')
+                    ->whereColumn('orders.user_id', 'users.id')
+                    ->orderBy('orders.created_at', 'desc')
+                    ->limit(1);
+            }, 'latest_order')
+            ->select('users.*', 'latest_order.price as latest_order_price')
+            ->get();
+
+        $this->assertCount(2, $results);
+        $this->assertEquals(150, $results->firstWhere('name', 'John Doe')->latest_order_price);
+        $this->assertEquals(75, $results->firstWhere('name', 'Jane Doe')->latest_order_price);
+
+        $this->assertObjectHasProperty('name', $results->first());
+        $this->assertObjectHasProperty('email', $results->first());
+        $this->assertObjectHasProperty('latest_order_price', $results->first());
     }
 
     #[Test]
