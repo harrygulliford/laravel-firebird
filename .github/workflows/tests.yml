@@ -1,16 +1,18 @@
 name: Tests
 
 on:
-  [push, pull_request]
+  - push
+  - pull_request
 
 jobs:
   test:
     runs-on: ${{ matrix.os }}
+
     strategy:
       matrix:
         os: [ubuntu-latest]
         php: [8.3, 8.2, 8.1, 8.0, 7.4]
-        laravel: [11.*, 10.*, 9.*, 8.*]
+        laravel: ['8.*', '9.*', '10.*', '11.*', '12.*']
         stability: [prefer-lowest, prefer-stable]
         firebird: [v4.0, v3.0, v2.5.9-sc]
         include:
@@ -22,6 +24,8 @@ jobs:
             testbench: ^8.0
           - laravel: 11.*
             testbench: ^9.0
+          - laravel: 12.*
+            testbench: ^10.0
         exclude:
           - laravel: 8.*
             php: 8.3
@@ -39,6 +43,12 @@ jobs:
             php: 8.0
           - laravel: 11.*
             php: 7.4
+          - laravel: 12.*
+            php: 8.1
+          - laravel: 12.*
+            php: 8.0
+          - laravel: 12.*
+            php: 7.4
       fail-fast: false
 
     name: PHP ${{ matrix.php }}, Laravel ${{ matrix.laravel }}, Firebird ${{ matrix.firebird }}, ${{ matrix.stability }}
@@ -47,9 +57,9 @@ jobs:
       firebird:
         image: jacobalberty/firebird:${{ matrix.firebird }}
         env:
-          FIREBIRD_DATABASE: 'database.fdb'
-          ISC_PASSWORD: 'masterkey'
-          EnableLegacyClientAuth: 'true'
+          FIREBIRD_DATABASE: database.fdb
+          ISC_PASSWORD: masterkey
+          EnableLegacyClientAuth: true
         ports:
           - 3050:3050
 
