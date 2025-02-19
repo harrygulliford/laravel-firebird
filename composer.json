@@ -1,40 +1,40 @@
 {
-  "name": "harrygulliford/laravel-firebird",
-  "description": "Firebird database driver for the Laravel Framework",
-  "license": "MIT",
-  "require": {
-    "php": "^7.4|^8.0",
-    "illuminate/support": "^8.65|^9.33|^10.0|^11.0",
-    "illuminate/container": "^8.65|^9.33|^10.0|^11.0",
-    "illuminate/database": "^8.65|^9.33|^10.0|^11.0",
-    "illuminate/events": "^8.65|^9.33|^10.0|^11.0"
-  },
-  "require-dev": {
-    "mockery/mockery": "^1.4",
-    "phpunit/phpunit": "^9.6.11|^10.0",
-    "orchestra/testbench": "^6.19|^7.0|^8.0|^9.0",
-    "fakerphp/faker": "^1.15"
-  },
-  "archive": {
-    "exclude": [
-      "/tests"
-    ]
-  },
-  "autoload": {
-    "psr-4": {
-      "HarryGulliford\\Firebird\\": "src/"
+    "name": "harrygulliford/laravel-firebird",
+    "description": "Firebird database driver for the Laravel Framework",
+    "license": "MIT",
+    "require": {
+        "php": "^7.4|^8.0",
+        "illuminate/support": "^8.65|^9.33|^10.0|^11.0|^12.0",
+        "illuminate/container": "^8.65|^9.33|^10.0|^11.0|^12.0",
+        "illuminate/database": "^8.65|^9.33|^10.0|^11.0|^12.0",
+        "illuminate/events": "^8.65|^9.33|^10.0|^11.0|^12.0"
+    },
+    "require-dev": {
+        "mockery/mockery": "^1.4",
+        "phpunit/phpunit": "^9.6.11|^10.0|^11.5.3",
+        "orchestra/testbench": "^6.19|^7.0|^8.0|^9.0|^10.0",
+        "fakerphp/faker": "^1.15"
+    },
+    "archive": {
+        "exclude": [
+            "/tests"
+        ]
+    },
+    "autoload": {
+        "psr-4": {
+            "HarryGulliford\\Firebird\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "HarryGulliford\\Firebird\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "HarryGulliford\\Firebird\\FirebirdServiceProvider"
+            ]
+        }
     }
-  },
-  "autoload-dev": {
-    "psr-4": {
-      "HarryGulliford\\Firebird\\Tests\\": "tests/"
-    }
-  },
-  "extra": {
-    "laravel": {
-      "providers": [
-        "HarryGulliford\\Firebird\\FirebirdServiceProvider"
-      ]
-    }
-  }
 }
