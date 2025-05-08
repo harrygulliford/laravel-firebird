@@ -23,7 +23,7 @@ class FirebirdConnector extends Connector implements ConnectorInterface
     }
 
     /**
-     * Create a DSN string from the configuration.
+     * Create a DSN string from a configuration.
      *
      * @param  array  $config
      * @return string
