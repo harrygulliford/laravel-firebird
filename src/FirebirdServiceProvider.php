@@ -2,8 +2,10 @@
 
 namespace HarryGulliford\Firebird;
 
+use Closure;
 use Illuminate\Database\Connection;
 use Illuminate\Support\ServiceProvider;
+use PDO;
 
 class FirebirdServiceProvider extends ServiceProvider
 {
@@ -14,8 +16,8 @@ class FirebirdServiceProvider extends ServiceProvider
      */
     public function register()
     {
-        Connection::resolverFor('firebird', function ($connection, $database, $tablePrefix, $config) {
-            return new FirebirdConnection($connection, $database, $tablePrefix, $config);
+        Connection::resolverFor('firebird', function (PDO|Closure $pdo, string $database = '', string $tablePrefix = '', array $config = []) {
+            return new FirebirdConnection($pdo, $database, $tablePrefix, $config);
         });
 
         $this->app->bind('db.connector.firebird', FirebirdConnector::class);
