@@ -2,9 +2,6 @@
 
 namespace HarryGulliford\Firebird\Schema;
 
-use Illuminate\Database\Schema\Builder as SchemaBuilder;
+use Illuminate\Database\Schema\Builder as BaseBuilder;
 
-class Builder extends SchemaBuilder
-{
-    //
-}
+class Builder extends BaseBuilder {}

@@ -2,9 +2,9 @@
 
 namespace HarryGulliford\Firebird\Query;
 
-use Illuminate\Database\Query\Builder as QueryBuilder;
+use Illuminate\Database\Query\Builder as BaseBuilder;
 
-class Builder extends QueryBuilder
+class Builder extends BaseBuilder
 {
     /**
      * Determine if any rows exist for the current query.
