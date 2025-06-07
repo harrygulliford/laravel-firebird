@@ -14,6 +14,14 @@ use PDO;
 class FirebirdConnection extends DatabaseConnection
 {
     /**
+     * {@inheritDoc}
+     */
+    public function getDriverTitle()
+    {
+        return 'Firebird';
+    }
+
+    /**
      * Get the server version for the connection.
      *
      * @return string
