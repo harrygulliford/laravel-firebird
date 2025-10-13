@@ -30,7 +30,7 @@ class FirebirdConnection extends DatabaseConnection
     {
         $version = $this->getPdo()->getAttribute(PDO::ATTR_SERVER_VERSION);
 
-        return Str::match('/(?<=LI-V)\d+\.\d+\.\d+/', $version);
+        return Str::match('/\(remote server\), version "\w+-V(\d+\.\d+\.\d+)/', $version);
     }
 
     /**
