@@ -6,7 +6,6 @@ use Illuminate\Database\Query\Builder;
 use Illuminate\Database\Query\Grammars\Grammar;
 use Illuminate\Database\Query\JoinLateralClause;
 use Illuminate\Support\Str;
-use RuntimeException;
 
 class FirebirdGrammar extends Grammar
 {
@@ -45,46 +44,6 @@ class FirebirdGrammar extends Grammar
     ];
 
     /**
-     * Compile the "select *" portion of the query.
-     *
-     * @param  \Illuminate\Database\Query\Builder  $query
-     * @param  array  $columns
-     * @return string|null
-     */
-    protected function compileColumns(Builder $query, $columns)
-    {
-        // See superclass.
-        if (! is_null($query->aggregate)) {
-            return;
-        }
-
-        $select = 'select ';
-
-        // Before Firebird v3, the syntax used to limit and offset rows is
-        // "select first [int] skip [int] * from table". Laravel's query builder
-        // doesn't natively support inserting components between "select" and
-        // the column names, so compile the limit and offset here.
-
-        if (isset($query->limit) && $usesLegacyLimitAndOffset ??= $this->usesLegacyLimitAndOffset()) {
-            $select .= $this->compileLegacyLimit($query, $query->limit).' ';
-        }
-
-        if (isset($query->offset) && $usesLegacyLimitAndOffset ??= $this->usesLegacyLimitAndOffset()) {
-            $select .= $this->compileLegacyOffset($query, $query->offset).' ';
-        }
-
-        if ($query->distinct) {
-            if (is_array($query->distinct)) {
-                throw new RuntimeException('This database engine does not support distinct on specific columns.');
-            }
-
-            $select .= 'distinct ';
-        }
-
-        return $select.$this->columnize($columns);
-    }
-
-    /**
      * Compile the "limit" portions of the query.
      *
      * @param  \Illuminate\Database\Query\Builder  $query
@@ -93,23 +52,7 @@ class FirebirdGrammar extends Grammar
      */
     protected function compileLimit(Builder $query, $limit)
     {
-        if ($this->usesLegacyLimitAndOffset()) {
-            return;
-        }
-
         return 'fetch first '.(int) $limit.' rows only';
-    }
-
-    /**
-     * Compile the "limit" portions of the query for legacy versions of Firebird.
-     *
-     * @param  \Illuminate\Database\Query\Builder  $query
-     * @param  int  $limit
-     * @return string
-     */
-    protected function compileLegacyLimit(Builder $query, $limit)
-    {
-        return 'first '.(int) $limit;
     }
 
     /**
@@ -121,23 +64,7 @@ class FirebirdGrammar extends Grammar
      */
     protected function compileOffset(Builder $query, $offset)
     {
-        if ($this->usesLegacyLimitAndOffset()) {
-            return;
-        }
-
         return 'offset '.(int) $offset.' rows';
-    }
-
-    /**
-     * Compile the "offset" portions of the query for legacy versions of Firebird.
-     *
-     * @param  \Illuminate\Database\Query\Builder  $query
-     * @param  int  $offset
-     * @return string
-     */
-    protected function compileLegacyOffset(Builder $query, $offset)
-    {
-        return 'skip '.(int) $offset;
     }
 
     /**
@@ -170,6 +97,10 @@ class FirebirdGrammar extends Grammar
      */
     protected function compileUnions(Builder $query)
     {
+        // This method is the same as the parent implementation, except that the
+        // order of offset and limit for union queries is reversed: offset must
+        // precede limit. This is due to Firebird's SQL syntax for union queries.
+
         $sql = '';
 
         foreach ($query->unions as $union) {
@@ -180,25 +111,28 @@ class FirebirdGrammar extends Grammar
             $sql .= ' '.$this->compileOrders($query, $query->unionOrders);
         }
 
-        // Swap the default order of limit and offset for union queries.
-
         if (isset($query->unionOffset)) {
-            if ($usesLegacyLimitAndOffset ??= $this->usesLegacyLimitAndOffset()) {
-                throw new RuntimeException('This database engine does not support offset on union queries.');
-            }
-
             $sql .= ' '.$this->compileOffset($query, $query->unionOffset);
         }
 
         if (isset($query->unionLimit)) {
-            if ($usesLegacyLimitAndOffset ??= $this->usesLegacyLimitAndOffset()) {
-                throw new RuntimeException('This database engine does not support limit on union queries.');
-            }
-
             $sql .= ' '.$this->compileLimit($query, $query->unionLimit);
         }
 
         return ltrim($sql);
+    }
+
+    /**
+     * Compile an exists statement into SQL.
+     *
+     * @param  \Illuminate\Database\Query\Builder  $query
+     * @return string
+     */
+    public function compileExists(Builder $query)
+    {
+        $select = $this->compileSelect($query);
+
+        return 'select case when exists('.$select.') then 1 else 0 end as "exists" from rdb$database';
     }
 
     /**
@@ -262,15 +196,5 @@ class FirebirdGrammar extends Grammar
     public function compileJoinLateral(JoinLateralClause $join, string $expression): string
     {
         return trim("{$join->type} join lateral {$expression} on true");
-    }
-
-    /**
-     * Determine if the database uses the legacy limit and offset syntax.
-     *
-     * @return bool
-     */
-    protected function usesLegacyLimitAndOffset(): bool
-    {
-        return version_compare($this->connection->getServerVersion(), '3.0.0', '<');
     }
 }
