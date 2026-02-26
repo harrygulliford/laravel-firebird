@@ -31,9 +31,9 @@ class FirebirdGrammar extends Grammar
     /**
      * All of the available clause operators.
      *
-     * @var array
+     * @var string[]
      *
-     * @link https://firebirdsql.org/file/documentation/chunk/en/refdocs/fblangref40/fblangref40-commons.html#fblangref40-commons-compar
+     * @link https://www.firebirdsql.org/file/documentation/html/en/refdocs/fblangref50/firebird-50-language-reference.html#fblangref50-commons-predicates
      */
     protected $operators = [
         '=', '<', '>', '<=', '>=', '<>', '!=',
