@@ -1047,11 +1047,6 @@ class QueryTest extends TestCase
     #[Test]
     public function it_can_execute_raw_select_containing_arithmetic()
     {
-        if (version_compare($this->getConnection()->getServerVersion(), '4.0', '>=')) {
-            // Ref: https://github.com/FirebirdSQL/php-firebird/issues/26
-            $this->markTestSkipped('Skipped due to an issue with DECIMAL or NUMERIC types in the PHP Firebird PDO extension for database engine version 4.0+');
-        }
-
         Order::factory()
             ->count(3)
             ->state(new Sequence(
