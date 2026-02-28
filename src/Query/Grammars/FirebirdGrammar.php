@@ -130,9 +130,9 @@ class FirebirdGrammar extends Grammar
      */
     public function compileExists(Builder $query)
     {
-        $select = $this->compileSelect($query);
-
-        return 'select case when exists('.$select.') then 1 else 0 end as "exists" from rdb$database';
+        return sprintf('select exists(%s) as %s from rdb$database',
+            $this->compileSelect($query),
+            $this->wrap('exists'));
     }
 
     /**
@@ -146,12 +146,10 @@ class FirebirdGrammar extends Grammar
     protected function dateBasedWhere($type, Builder $query, $where)
     {
         $condition = ($type === 'date' || $type === 'time')
-            ? 'cast('.$this->wrap($where['column']).' as '.$type.') '
-            : 'extract('.$type.' from '.$this->wrap($where['column']).') ';
+            ? sprintf('cast(%s as %s)', $this->wrap($where['column']), $type)
+            : sprintf('extract(%s from %s)', $type, $this->wrap($where['column']));
 
-        $condition .= $where['operator'].' '.$this->parameter($where['value']);
-
-        return $condition;
+        return $condition.' '.$where['operator'].' '.$this->parameter($where['value']);
     }
 
     /**
@@ -164,9 +162,7 @@ class FirebirdGrammar extends Grammar
      */
     public function compileProcedure(Builder $query, $procedure, array $values = [])
     {
-        $procedure = $this->wrap($procedure);
-
-        return $procedure.' ('.$this->parameterize($values).')';
+        return $this->wrap($procedure).' ('.$this->parameterize($values).')';
     }
 
     /**
