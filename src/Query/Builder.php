@@ -7,16 +7,6 @@ use Illuminate\Database\Query\Builder as BaseBuilder;
 class Builder extends BaseBuilder
 {
     /**
-     * Determine if any rows exist for the current query.
-     *
-     * @return bool
-     */
-    public function exists()
-    {
-        return parent::count() > 0;
-    }
-
-    /**
      * Set the stored procedure which the query is targeting.
      *
      * @param  string  $procedure
