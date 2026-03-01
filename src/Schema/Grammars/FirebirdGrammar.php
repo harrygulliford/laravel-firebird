@@ -23,6 +23,22 @@ class FirebirdGrammar extends Grammar
     protected $serials = ['bigInteger', 'integer', 'mediumInteger', 'smallInteger', 'tinyInteger'];
 
     /**
+     * Compile the query to determine if the given table exists.
+     *
+     * @param  string|null  $schema
+     * @param  string  $table
+     * @return string
+     */
+    public function compileTableExists($schema, $table)
+    {
+        return sprintf(
+            'select exists (select 1 from rdb$relations where rdb$relation_name = %s and rdb$relation_type = 0 and '
+            .'(rdb$system_flag is null or rdb$system_flag = 0)) as "exists" from rdb$database',
+            $this->quoteString($table),
+        );
+    }
+
+    /**
      * Compile the query to determine the tables.
      *
      * @return string
@@ -34,16 +50,6 @@ class FirebirdGrammar extends Grammar
             .'where rdb$relation_type = 0 '
             .'and (rdb$system_flag is null or rdb$system_flag = 0) '
             .'order by rdb$relation_name';
-    }
-
-    /**
-     * Compile the query to determine if a table exists.
-     *
-     * @return string
-     */
-    public function compileTableExists()
-    {
-        return 'select rdb$relation_name from rdb$relations where rdb$relation_name = ?';
     }
 
     /**
@@ -112,13 +118,11 @@ class FirebirdGrammar extends Grammar
      */
     public function compileDropIfExists(Blueprint $blueprint, Fluent $command)
     {
-        // Replace the double quotes with single quotes.
-        $table = str_replace('"', "'", $this->wrapTable($blueprint));
-
         return sprintf(
-            "execute block as begin if (exists(%s)) then execute statement '%s'; end",
-            str_replace('?', $table, $this->compileTableExists()), // Replace the ? character with the table name.
-            $this->compileDrop($blueprint, $command)
+            'execute block as begin if (exists(select 1 from rdb$relations where rdb$relation_name = %s and rdb$relation_type = 0 and '
+            .'(rdb$system_flag is null or rdb$system_flag = 0))) then execute statement \'drop table %s\'; end',
+            $this->quoteString($blueprint->getTable()),
+            $this->wrapTable($blueprint)
         );
     }
 
