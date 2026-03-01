@@ -56,15 +56,18 @@ class FirebirdGrammar extends Grammar
     /**
      * Compile the query to determine the columns.
      *
+     * @param  string|null  $schema
      * @param  string  $table
      * @return string
      */
-    public function compileColumns($table)
+    public function compileColumns($schema, $table)
     {
-        return 'select trim(trailing from rdb$field_name) as "name" '
-            .'from rdb$relation_fields '
-            .'where rdb$relation_name = '.$this->quoteString($table).' '
-            .'order by rdb$relation_name';
+        return sprintf(
+            'select trim(trailing from rdb$field_name) as "name" '
+            .'from rdb$relation_fields where rdb$relation_name = %s '
+            .'order by rdb$field_position',
+            $this->quoteString($table),
+        );
     }
 
     /**
