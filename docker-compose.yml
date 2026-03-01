@@ -1,9 +1,18 @@
 services:
-  firebird:
-    image: jacobalberty/firebird:v4.0
+  firebird-v5:
+    image: firebirdsql/firebird:5
     environment:
-      FIREBIRD_DATABASE: 'database.fdb'
-      ISC_PASSWORD: 'masterkey'
-      EnableLegacyClientAuth: 'true'
+      FIREBIRD_DATABASE: "database.fdb"
+      FIREBIRD_ROOT_PASSWORD: "masterkey"
+      FIREBIRD_USE_LEGACY_AUTH: "true"
     ports:
-      - "3051:3050"
+      - "3055:3050"
+
+  firebird-v4:
+    image: firebirdsql/firebird:4
+    environment:
+      FIREBIRD_DATABASE: "database.fdb"
+      FIREBIRD_ROOT_PASSWORD: "masterkey"
+      FIREBIRD_USE_LEGACY_AUTH: "true"
+    ports:
+      - "3054:3050"

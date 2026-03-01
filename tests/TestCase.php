@@ -9,7 +9,7 @@ use Orchestra\Testbench\TestCase as OrchestraTestCase;
 
 class TestCase extends OrchestraTestCase
 {
-    public function setUp(): void
+    protected function setUp(): void
     {
         parent::setUp();
 
@@ -43,7 +43,7 @@ class TestCase extends OrchestraTestCase
             'driver' => 'firebird',
             'host' => env('DB_HOST', 'localhost'),
             'port' => env('DB_PORT', '3050'),
-            'database' => env('DB_DATABASE', '/firebird/data/database.fdb'),
+            'database' => env('DB_DATABASE', '/var/lib/firebird/data/database.fdb'),
             'username' => env('DB_USERNAME', 'sysdba'),
             'password' => env('DB_PASSWORD', 'masterkey'),
             'charset' => env('DB_CHARSET', 'UTF8'),

@@ -14,7 +14,7 @@ jobs:
         php: [8.4, 8.3, 8.2]
         laravel: [12.*]
         stability: [prefer-lowest, prefer-stable]
-        firebird: [v5.0, v4.0]
+        firebird: [5, 4]
         include:
           - laravel: 12.*
             testbench: ^10.0
@@ -24,11 +24,11 @@ jobs:
 
     services:
       firebird:
-        image: jacobalberty/firebird:${{ matrix.firebird }}
+        image: firebirdsql/firebird:${{ matrix.firebird }}
         env:
           FIREBIRD_DATABASE: "database.fdb"
-          ISC_PASSWORD: "masterkey"
-          EnableLegacyClientAuth: "true"
+          FIREBIRD_ROOT_PASSWORD: "masterkey"
+          FIREBIRD_USE_LEGACY_AUTH: "true"
         ports:
           - 3050:3050
 
