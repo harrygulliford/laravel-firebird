@@ -41,9 +41,10 @@ class FirebirdGrammar extends Grammar
     /**
      * Compile the query to determine the tables.
      *
+     * @param  string|string[]|null  $schema
      * @return string
      */
-    public function compileTables()
+    public function compileTables($schema)
     {
         return 'select trim(trailing from rdb$relation_name) as "name" '
             .'from rdb$relations '
