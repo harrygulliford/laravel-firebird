@@ -111,14 +111,24 @@ class QueryTest extends TestCase
     }
 
     #[Test]
-    public function it_throws_an_exception_for_select_distinct_columns()
+    public function it_can_select_distinct_with_multiple_columns()
     {
-        $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('This database engine does not support distinct on specific columns.');
+        Order::factory()->count(1)->create(['price' => 10, 'quantity' => 1]);
+        Order::factory()->count(5)->create(['price' => 50, 'quantity' => 2]);
+        Order::factory()->count(5)->create(['price' => 50, 'quantity' => 3]);
+        Order::factory()->count(2)->create(['price' => 100, 'quantity' => 3]);
 
-        DB::table('orders')
-            ->distinct('price')
+        $results = DB::table('orders')
+            ->distinct()
+            ->select('price', 'quantity')
             ->get();
+        $this->assertCount(4, $results);
+
+        $results = DB::table('orders')
+            ->distinct()
+            ->select('price')
+            ->get();
+        $this->assertCount(3, $results);
     }
 
     #[Test]
