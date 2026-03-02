@@ -1057,7 +1057,7 @@ class QueryTest extends TestCase
             ->create();
 
         $results = DB::table('orders')
-            ->selectRaw('"price", cast("price" * 2 as double precision) as "price_with_tax"')
+            ->selectRaw('"price", cast("price" * 1.1 as double precision) as "price_with_tax"')
             ->get();
 
         foreach ($results as $result) {
