@@ -9,9 +9,9 @@ This package adds support for the Firebird PDO Database Driver in Laravel applic
 
 ## Version Support
 
-- **PHP:** 8.2, 8.3, 8.4
-- **Laravel:** 11, 12
-- **Firebird:** 2.5, 3, 4, 5
+- **PHP:** 8.2+
+- **Laravel:** 12, 13
+- **Firebird:** 4, 5
 
 ## Installation
 
@@ -41,9 +41,6 @@ driver:
 
 ],
 ```
-
-To register this package in Lumen, you'll also need to add the following line to the service providers in your `config/app.php` file:
-`$app->register(\HarryGulliford\Firebird\FirebirdServiceProvider::class);`
 
 ## Limitations
 This package does not intend to support database migrations and it should not be used for this use case.
