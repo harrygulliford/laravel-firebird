@@ -11,7 +11,7 @@
   },
   "require-dev": {
     "mockery/mockery": "^1.6",
-    "phpunit/phpunit": "^11.5",
+    "phpunit/phpunit": "^11.5|^12.0",
     "orchestra/testbench": "^10.3",
     "fakerphp/faker": "^1.24"
   },
