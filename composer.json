@@ -1,4 +1,5 @@
 {
+  "$schema": "https://getcomposer.org/schema.json",
   "name": "harrygulliford/laravel-firebird",
   "description": "Firebird database driver for the Laravel Framework",
   "license": "MIT",
