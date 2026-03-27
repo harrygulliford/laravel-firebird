@@ -17,9 +17,9 @@ class OrderFactory extends Factory
         return [
             'id' => self::$id++,
             'user_id' => User::factory(),
-            'name' => $this->faker->word(),
-            'price' => $this->faker->numberBetween(1, 200),
-            'quantity' => $this->faker->numberBetween(0, 8),
+            'name' => fake()->word(),
+            'price' => fake()->numberBetween(1, 200),
+            'quantity' => fake()->numberBetween(0, 8),
             'created_at' => now(),
             'updated_at' => now(),
         ];

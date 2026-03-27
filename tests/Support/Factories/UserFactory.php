@@ -15,12 +15,12 @@ class UserFactory extends Factory
     {
         return [
             'id' => self::$id++,
-            'name' => $this->faker->name(),
-            'email' => $this->faker->email(),
-            'city' => $this->faker->city(),
-            'state' => $this->faker->state(),
-            'post_code' => $this->faker->postcode(),
-            'country' => $this->faker->country(),
+            'name' => fake()->name(),
+            'email' => fake()->email(),
+            'city' => fake()->city(),
+            'state' => fake()->state(),
+            'post_code' => fake()->postcode(),
+            'country' => fake()->country(),
             'created_at' => now(),
             'updated_at' => now(),
         ];
