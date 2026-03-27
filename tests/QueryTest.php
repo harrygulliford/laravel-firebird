@@ -1006,9 +1006,9 @@ class QueryTest extends TestCase
     #[Test]
     public function it_can_check_exists()
     {
-        User::factory()->create(['name' => $name = fake()->name()]);
-
+        User::factory()->count(2)->create(['name' => $name = fake()->name()]);
         $this->assertTrue(DB::table('users')->where('name', $name)->exists());
+
         $this->assertFalse(DB::table('users')->where('name', uniqid('__invalid__'))->exists());
         $this->assertFalse(DB::table('users')->where('id', null)->exists());
     }
