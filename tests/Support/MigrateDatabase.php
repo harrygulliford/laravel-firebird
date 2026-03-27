@@ -68,26 +68,33 @@ trait MigrateDatabase
 
     public function createProcedures()
     {
-        DB::select(
-            'CREATE PROCEDURE MULTIPLY (a INTEGER, b INTEGER)
-                RETURNS (result INTEGER)
-            AS BEGIN
-                result = a * b;
-                SUSPEND;
-            END'
+        $procedure = 'math_multiply';
+        $resultColumn = 'result';
+
+        $sql = sprintf(
+            'create procedure %s (a integer, b integer) returns (%s integer) as begin %s = a * b; suspend; end',
+            DB::getQueryGrammar()->wrap($procedure),
+            DB::getQueryGrammar()->wrap($resultColumn),
+            DB::getQueryGrammar()->wrap($resultColumn),
         );
+
+        DB::select($sql);
     }
 
     public function dropProcedures()
     {
-        try {
-            DB::select('DROP PROCEDURE MULTIPLY');
-        } catch (QueryException $e) {
-            // Suppress the "procedure not found" exception, as we want to
-            // replicate dropIfExists() functionality without using the Schema
-            // class.
-            if (! Str::contains($e->getMessage(), 'not found')) {
-                throw $e;
+        $procedures = [
+            'math_multiply',
+        ];
+
+        foreach ($procedures as $procedure) {
+            try {
+                DB::select('drop procedure '.DB::getQueryGrammar()->wrap($procedure));
+            } catch (QueryException $e) {
+                // Suppress the "not found" exception.
+                if (! Str::contains($e->getMessage(), 'not found')) {
+                    throw $e;
+                }
             }
         }
     }

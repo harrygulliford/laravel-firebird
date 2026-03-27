@@ -1549,13 +1549,21 @@ class QueryTest extends TestCase
         $firstNumber = random_int(1, 10);
         $secondNumber = random_int(1, 10);
 
-        $result = DB::query()
-            ->fromProcedure('MULTIPLY', [
-                $firstNumber, $secondNumber,
-            ])
-            ->first()
-            ->RESULT;
-
+        $result = DB::selectOne(
+            'select "result" from "math_multiply" (?, ?)',
+            [$firstNumber, $secondNumber]
+        )->result;
         $this->assertEquals($firstNumber * $secondNumber, $result);
+
+        $aliasResult = DB::query()
+            ->procedure('math_multiply', [$firstNumber, $secondNumber])
+            ->first()
+            ->result;
+        $this->assertEquals($result, $aliasResult);
+
+        $aliasResult = DB::executeProcedure('math_multiply', [$firstNumber, $secondNumber])
+            ->first()
+            ->result;
+        $this->assertEquals($result, $aliasResult);
     }
 }
