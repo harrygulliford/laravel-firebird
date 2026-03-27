@@ -3,21 +3,11 @@
 namespace HarryGulliford\Firebird\Tests;
 
 use HarryGulliford\Firebird\FirebirdServiceProvider;
-use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\DB;
 use Orchestra\Testbench\TestCase as OrchestraTestCase;
 
 class TestCase extends OrchestraTestCase
 {
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        Factory::guessFactoryNamesUsing(function ($class) {
-            return 'HarryGulliford\\Firebird\\Tests\\Support\\Factories\\'.class_basename($class).'Factory';
-        });
-    }
-
     /**
      * Load package service provider.
      *
