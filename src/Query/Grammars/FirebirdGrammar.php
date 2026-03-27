@@ -192,4 +192,19 @@ class FirebirdGrammar extends Grammar
     {
         return trim("{$join->type} join lateral {$expression} on true");
     }
+
+    /**
+     * Compile an insert and get ID statement into SQL.
+     *
+     * @param  Builder  $query
+     * @param  array  $values
+     * @param  string|null  $sequence
+     * @return string
+     */
+    public function compileInsertGetId(Builder $query, $values, $sequence)
+    {
+        // The pdo_firebird driver does not support `lastInsertId()`. Perform
+        // the insert operation in a way that returns the id.
+        return $this->compileInsert($query, $values).' returning '.$this->wrap($sequence ?: 'id');
+    }
 }

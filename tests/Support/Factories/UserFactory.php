@@ -9,12 +9,9 @@ class UserFactory extends Factory
 {
     protected $model = User::class;
 
-    public static int $id = 1;
-
     public function definition()
     {
         return [
-            'id' => self::$id++,
             'name' => fake()->name(),
             'email' => fake()->email(),
             'city' => fake()->city(),

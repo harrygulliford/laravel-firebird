@@ -11,8 +11,6 @@ class User extends Model
 {
     use HasFactory, SoftDeletes;
 
-    public $incrementing = false;
-
     protected $guarded = [];
 
     public static $factory = UserFactory::class;

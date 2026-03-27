@@ -2,7 +2,6 @@
 
 namespace HarryGulliford\Firebird\Tests;
 
-use HarryGulliford\Firebird\Tests\Support\Factories\UserFactory;
 use HarryGulliford\Firebird\Tests\Support\MigrateDatabase;
 use HarryGulliford\Firebird\Tests\Support\Models\User;
 use PHPUnit\Framework\Attributes\Test;
@@ -14,8 +13,7 @@ class ModelTest extends TestCase
     #[Test]
     public function it_can_create_a_record()
     {
-        User::create($fields = [
-            'id' => $id = UserFactory::$id++, // Firebird < 3 does not support auto-incrementing columns.
+        $user = User::create($fields = [
             'name' => 'Anna',
             'email' => 'anna@example.com',
             'city' => 'Sydney',
@@ -26,13 +24,19 @@ class ModelTest extends TestCase
             'updated_at' => now()->toDateTimeString(),
         ]);
 
-        $user = User::find($id);
-
         $this->assertInstanceOf(User::class, $user);
+
+        $this->assertDatabaseHas('users', $fields);
+
+        $foundUser = User::find($user->id);
+
+        $this->assertTrue($user->is($foundUser));
+
+        $this->assertInstanceOf(User::class, $foundUser);
 
         // Check all fields have been persisted the model.
         foreach ($fields as $key => $value) {
-            $this->assertEquals($value, $user->{$key});
+            $this->assertEquals($value, $foundUser->{$key});
         }
     }
 }

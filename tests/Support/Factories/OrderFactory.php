@@ -10,12 +10,9 @@ class OrderFactory extends Factory
 {
     protected $model = Order::class;
 
-    public static int $id = 1;
-
     public function definition()
     {
         return [
-            'id' => self::$id++,
             'user_id' => User::factory(),
             'name' => fake()->word(),
             'price' => fake()->numberBetween(1, 200),

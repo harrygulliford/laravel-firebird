@@ -1530,18 +1530,27 @@ class QueryTest extends TestCase
         $this->assertTrue($results->first()->id < $results->last()->id);
     }
 
-    // /** @test */
-    // public function it_can_insert_returning_id()
-    // {
-    //     $id = DB::table('users')
-    //         ->insertGetId([
-    //             'name' => 'Anna',
-    //             'city' => 'Sydney',
-    //             'country' => 'Australia',
-    //         ]);
+    #[Test]
+    public function it_can_insert_returning_id()
+    {
+        $id = DB::table('users')
+            ->insertGetId([
+                'name' => 'Anna',
+                'city' => 'Sydney',
+                'country' => 'Australia',
+                'email' => '',
+            ], 'id');
 
-    //     dd($id);
-    // }
+        $this->assertNotNull($id);
+
+        $this->assertDatabaseHas('users', [
+            'id' => $id,
+            'name' => 'Anna',
+            'city' => 'Sydney',
+            'country' => 'Australia',
+            'email' => '',
+        ]);
+    }
 
     #[Test]
     public function it_can_execute_stored_procedures()
