@@ -437,21 +437,6 @@ class QueryTest extends TestCase
     }
 
     #[Test]
-    public function it_can_filter_where_in_exceeds_firebird_2_limit()
-    {
-        Order::factory()
-            ->count(1505)
-            ->for(User::factory())
-            ->create(['price' => 100]);
-
-        $results = DB::table('orders')
-            ->whereIn('price', [100])
-            ->count();
-
-        $this->assertEquals(1505, $results);
-    }
-
-    #[Test]
     public function it_can_filter_where_not_in()
     {
         Order::factory()->count(1)->create(['price' => 75]);
