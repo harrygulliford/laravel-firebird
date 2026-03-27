@@ -6,11 +6,12 @@ use HarryGulliford\Firebird\Tests\Support\Factories\OrderFactory;
 use HarryGulliford\Firebird\Tests\Support\Factories\UserFactory;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
 trait MigrateDatabase
 {
-    public function setUp(): void
+    protected function setUp(): void
     {
         parent::setUp();
 
@@ -18,17 +19,17 @@ trait MigrateDatabase
             $this->dropTables();
             $this->createTables();
 
-            $this->dropProcedure();
-            $this->createProcedure();
+            $this->dropProcedures();
+            $this->createProcedures();
 
             MigrationState::$migrated = true;
         }
     }
 
-    public function tearDown(): void
+    protected function tearDown(): void
     {
-        DB::select('DELETE FROM "orders"');
-        DB::select('DELETE FROM "users"');
+        DB::table('orders')->delete();
+        DB::table('users')->delete();
 
         // Reset the static ids on the factory, as Firebird <= 3 does not
         // support auto-incrementing ids.
@@ -52,30 +53,20 @@ trait MigrateDatabase
 
     public function dropTables(): void
     {
-        try {
-            DB::select('DROP TABLE "orders"');
-        } catch (QueryException $e) {
-            // Suppress the "table does not exist" exception, as we want to
-            // replicate dropIfExists() functionality without using the Schema
-            // class.
-            if (! Str::contains($e->getMessage(), 'does not exist')) {
-                throw $e;
-            }
-        }
+        $tables = [
+            'orders',
+            'users',
+            // Can be left behind if the test suite exits unexpectedly:
+            'contacts',
+            'foo',
+        ];
 
-        try {
-            DB::select('DROP TABLE "users"');
-        } catch (QueryException $e) {
-            // Suppress the "table does not exist" exception, as we want to
-            // replicate dropIfExists() functionality without using the Schema
-            // class.
-            if (! Str::contains($e->getMessage(), 'does not exist')) {
-                throw $e;
-            }
+        foreach ($tables as $table) {
+            Schema::dropIfExists($table);
         }
     }
 
-    public function createProcedure()
+    public function createProcedures()
     {
         DB::select(
             'CREATE PROCEDURE MULTIPLY (a INTEGER, b INTEGER)
@@ -87,7 +78,7 @@ trait MigrateDatabase
         );
     }
 
-    public function dropProcedure()
+    public function dropProcedures()
     {
         try {
             DB::select('DROP PROCEDURE MULTIPLY');
