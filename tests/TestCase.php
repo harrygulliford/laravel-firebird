@@ -3,7 +3,6 @@
 namespace HarryGulliford\Firebird\Tests;
 
 use HarryGulliford\Firebird\FirebirdServiceProvider;
-use Illuminate\Support\Facades\DB;
 use Orchestra\Testbench\TestCase as OrchestraTestCase;
 
 class TestCase extends OrchestraTestCase
@@ -38,15 +37,5 @@ class TestCase extends OrchestraTestCase
             'password' => env('DB_PASSWORD', 'masterkey'),
             'charset' => env('DB_CHARSET', 'UTF8'),
         ]);
-    }
-
-    /**
-     * Determine the Firebird engine version of the current database connection.
-     *
-     * @return float
-     */
-    public function getDatabaseEngineVersion(): float
-    {
-        return (float) DB::selectOne('SELECT rdb$get_context(\'SYSTEM\', \'ENGINE_VERSION\') as "version" from rdb$database')->version;
     }
 }
