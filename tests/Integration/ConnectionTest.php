@@ -1,6 +1,8 @@
 <?php
 
-namespace HarryGulliford\Firebird\Tests;
+namespace HarryGulliford\Firebird\Tests\Integration;
+
+use HarryGulliford\Firebird\Tests\TestCase;
 
 use HarryGulliford\Firebird\Query\Builder as FirebirdQueryBuilder;
 use HarryGulliford\Firebird\Query\Grammars\FirebirdGrammar as FirebirdQueryGrammar;

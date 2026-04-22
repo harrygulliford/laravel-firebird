@@ -10,8 +10,11 @@
     backupStaticProperties="false"
     xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/11.1/phpunit.xsd">
   <testsuites>
-    <testsuite name="Laravel Firebird Test Suite">
-      <directory suffix="Test.php">./tests/</directory>
+    <testsuite name="Unit">
+      <directory suffix="Test.php">./tests/Unit</directory>
+    </testsuite>
+    <testsuite name="Integration">
+      <directory suffix="Test.php">./tests/Integration</directory>
     </testsuite>
   </testsuites>
   <source>
