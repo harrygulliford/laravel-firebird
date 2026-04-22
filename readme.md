@@ -1,7 +1,9 @@
 # Firebird for Laravel (Enhanced)
 
-[![Tests](https://github.com/ptavant/laravel-firebird/actions/workflows/tests.yml/badge.svg)](https://github.com/ptavant/laravel-firebird/actions/workflows/tests.yml)
-[![License](https://img.shields.io/github/license/ptavant/laravel-firebird)](LICENSE)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![PHP 8.2+](https://img.shields.io/badge/PHP-8.2%2B-blue.svg)](https://www.php.net/)
+[![Laravel 12|13](https://img.shields.io/badge/Laravel-12%20%7C%2013-red.svg)](https://laravel.com)
+[![Firebird 2.5-5.0](https://img.shields.io/badge/Firebird-2.5--5.0-orange.svg)](https://firebirdsql.org)
 
 Enhanced Firebird database driver for Laravel, with full support for Firebird 2.5 through 5.0, Dialect 1 and 3, and comprehensive schema introspection.
 
