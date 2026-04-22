@@ -81,6 +81,44 @@ class FirebirdGrammar extends Grammar
 
         return true; // assume latest if connection type unknown
     }
+
+    /**
+     * Check if the connection uses Dialect 1.
+     *
+     * Dialect 1: double-quotes are string literals, not identifiers.
+     * All identifiers must be unquoted (case-insensitive uppercase).
+     */
+    protected function isDialect1(): bool
+    {
+        if ($this->connection instanceof FirebirdConnection) {
+            return $this->connection->getDialect() === 1;
+        }
+
+        return false;
+    }
+
+    /**
+     * Wrap a value in keyword identifiers.
+     *
+     * Dialect 1: identifiers are NOT quoted (double-quotes = string literals).
+     * Dialect 3: identifiers wrapped in double-quotes (case-sensitive).
+     *
+     * @param  string  $value
+     * @return string
+     */
+    protected function wrapValue($value)
+    {
+        if ($value === '*') {
+            return $value;
+        }
+
+        if ($this->isDialect1()) {
+            return $value;
+        }
+
+        return '"'.str_replace('"', '""', $value).'"';
+    }
+
     /**
      * The components that make up a select clause.
      *

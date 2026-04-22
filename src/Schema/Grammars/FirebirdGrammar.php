@@ -96,6 +96,37 @@ class FirebirdGrammar extends Grammar
     }
 
     /**
+     * Check if the connection uses Dialect 1.
+     */
+    protected function isDialect1(): bool
+    {
+        if ($this->connection instanceof FirebirdConnection) {
+            return $this->connection->getDialect() === 1;
+        }
+
+        return false;
+    }
+
+    /**
+     * Wrap a value in keyword identifiers.
+     *
+     * Dialect 1: no quoting (double-quotes = string literals).
+     * Dialect 3: standard double-quote wrapping.
+     */
+    protected function wrapValue($value)
+    {
+        if ($value === '*') {
+            return $value;
+        }
+
+        if ($this->isDialect1()) {
+            return $value;
+        }
+
+        return '"'.str_replace('"', '""', $value).'"';
+    }
+
+    /**
      * The possible column modifiers.
      *
      * Order matters: Charset and Collate must come before Nullable/Default.
