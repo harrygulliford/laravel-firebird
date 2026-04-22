@@ -1,6 +1,6 @@
 # Firebird for Laravel (Enhanced)
 
-[![Tests](https://github.com/ptavant/laravel-firebird/actions/workflows/tests.yml/badge.svg)](https://github.com/ptavant/laravel-firebird/actions/workflows/tests.yml)
+[![Tests](https://github.com/ptavant/laravel-firebird/actions/workflows/tests.yml/badge.svg?branch=4.1)](https://github.com/ptavant/laravel-firebird/actions/workflows/tests.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![PHP 8.2+](https://img.shields.io/badge/PHP-8.2%2B-blue.svg)](https://www.php.net/)
 [![Laravel 12|13](https://img.shields.io/badge/Laravel-12%20%7C%2013-red.svg)](https://laravel.com)
