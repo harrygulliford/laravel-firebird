@@ -193,19 +193,27 @@ class FirebirdConnection extends DatabaseConnection
     }
 
     /**
-     * Parse the constraint name from a unique constraint violation exception.
+     * Parse the constraint name and columns from a unique constraint violation exception.
      *
      * Firebird error format: violation of PRIMARY or UNIQUE KEY constraint "CONSTRAINT_NAME" on table "TABLE_NAME"
+     * Problematic key value is ("COL1" = val1, "COL2" = val2)
      *
      * @param  \Exception  $exception
-     * @return string|null
+     * @return array{index: string|null, columns: array}
      */
-    protected function parseUniqueConstraintViolation(\Exception $exception): ?string
+    protected function parseUniqueConstraintViolation(\Exception $exception): array
     {
+        $index = null;
+        $columns = [];
+
         if (preg_match('/constraint "([^"]+)"/', $exception->getMessage(), $matches)) {
-            return $matches[1];
+            $index = $matches[1];
         }
 
-        return null;
+        if (preg_match_all('/"([^"]+)"\s*=/', $exception->getMessage(), $colMatches)) {
+            $columns = $colMatches[1];
+        }
+
+        return ['index' => $index, 'columns' => $columns];
     }
 }
