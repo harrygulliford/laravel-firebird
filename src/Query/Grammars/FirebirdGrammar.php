@@ -333,10 +333,17 @@ class FirebirdGrammar extends Grammar
             return "insert into {$table} default values";
         }
 
+        // If not a nested array (single record as associative array), delegate to parent
+        if (! is_array(reset($values))) {
+            return parent::compileInsert($query, [$values]);
+        }
+
+        // Single row — delegate to parent
         if (count($values) === 1) {
             return parent::compileInsert($query, $values);
         }
 
+        // Multiple rows — Firebird does not support multi-row VALUES (), ()
         $table = $this->wrapTable($query->from);
         $columns = $this->columnize(array_keys(reset($values)));
 
