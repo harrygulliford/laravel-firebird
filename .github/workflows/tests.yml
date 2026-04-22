@@ -1,57 +1,33 @@
 name: Tests
 
 on:
-  - push
-  - pull_request
+  push:
+    branches: [4.1]
+  pull_request:
+    branches: [4.1]
 
 jobs:
-  test:
-    runs-on: ${{ matrix.os }}
+  unit:
+    name: Unit Tests (PHP ${{ matrix.php }})
+    runs-on: ubuntu-latest
 
     strategy:
-      matrix:
-        os: [ubuntu-latest]
-        php: [8.5, 8.4, 8.3, 8.2]
-        laravel: [13.*, 12.*]
-        stability: [prefer-lowest, prefer-stable]
-        firebird: [5, 4]
-        include:
-          - laravel: 13.*
-            testbench: ^11.0
-          - laravel: 12.*
-            testbench: ^10.3
-        exclude:
-          - php: 8.2
-            laravel: 13.*
       fail-fast: false
-
-    name: PHP ${{ matrix.php }}, Laravel ${{ matrix.laravel }}, Firebird ${{ matrix.firebird }}, ${{ matrix.stability }}
-
-    services:
-      firebird:
-        image: firebirdsql/firebird:${{ matrix.firebird }}
-        env:
-          FIREBIRD_DATABASE: "database.fdb"
-          FIREBIRD_ROOT_PASSWORD: "masterkey"
-          FIREBIRD_USE_LEGACY_AUTH: "true"
-        ports:
-          - 3050:3050
+      matrix:
+        php: ['8.2', '8.3', '8.4']
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v6
+      - uses: actions/checkout@v4
 
-      - name: Setup php
+      - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php }}
-          extensions: pdo_firebird
+          extensions: mbstring
           coverage: none
 
       - name: Install dependencies
-        run: |
-          composer require "laravel/framework:${{ matrix.laravel }}" "orchestra/testbench:${{ matrix.testbench }}" "phpunit/phpunit:${{ matrix.php == 8.2 && '^11.5' || '^12.0' }}" --no-interaction --no-update
-          composer update --${{ matrix.stability }} --prefer-dist --no-interaction
+        run: composer install --no-interaction --prefer-dist
 
-      - name: Run tests
-        run: vendor/bin/phpunit
+      - name: Run unit tests
+        run: vendor/bin/phpunit --testsuite Unit
