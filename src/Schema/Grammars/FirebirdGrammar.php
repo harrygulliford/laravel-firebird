@@ -9,11 +9,18 @@ use Illuminate\Support\Fluent;
 class FirebirdGrammar extends Grammar
 {
     /**
+     * Indicates whether the grammar supports schema transactions.
+     *
+     * @var bool
+     */
+    protected $transactions = true;
+
+    /**
      * The possible column modifiers.
      *
      * @var array
      */
-    protected $modifiers = ['Charset', 'Collate', 'Increment', 'Nullable', 'Default'];
+    protected $modifiers = ['Charset', 'Collate', 'Nullable', 'Default', 'Increment'];
 
     /**
      * The columns available as serials.
@@ -63,9 +70,22 @@ class FirebirdGrammar extends Grammar
     public function compileColumns($schema, $table)
     {
         return sprintf(
-            'select trim(trailing from rdb$field_name) as "name" '
-            .'from rdb$relation_fields where rdb$relation_name = %s '
-            .'order by rdb$field_position',
+            'select trim(rf.rdb$field_name) as "name", '
+            .'f.rdb$field_type as "field_type", '
+            .'f.rdb$field_sub_type as "field_sub_type", '
+            .'f.rdb$field_length as "field_length", '
+            .'f.rdb$field_precision as "field_precision", '
+            .'f.rdb$field_scale as "field_scale", '
+            .'rf.rdb$null_flag as "null_flag", '
+            .'rf.rdb$default_source as "default_source", '
+            .'f.rdb$computed_source as "computed_source", '
+            .'rf.rdb$description as "description", '
+            .'rf.rdb$identity_type as "identity_type", '
+            .'(select trim(rc.rdb$collation_name) from rdb$collations rc where rc.rdb$collation_id = rf.rdb$collation_id and rc.rdb$character_set_id = f.rdb$character_set_id) as "collation_name" '
+            .'from rdb$relation_fields rf '
+            .'join rdb$fields f on rf.rdb$field_source = f.rdb$field_name '
+            .'where rf.rdb$relation_name = %s '
+            .'order by rf.rdb$field_position',
             $this->quoteString($table),
         );
     }
@@ -621,5 +641,185 @@ class FirebirdGrammar extends Grammar
     protected function typeMacAddress(Fluent $column)
     {
         return 'VARCHAR(17)';
+    }
+
+    /**
+     * Compile the query to determine the views.
+     *
+     * @param  string|null  $schema
+     * @return string
+     */
+    public function compileViews($schema)
+    {
+        return 'select trim(trailing from rdb$relation_name) as "name", '
+            .'rdb$view_source as "definition" '
+            .'from rdb$relations '
+            .'where rdb$relation_type = 1 '
+            .'and (rdb$system_flag is null or rdb$system_flag = 0) '
+            .'order by rdb$relation_name';
+    }
+
+    /**
+     * Compile the query to determine the indexes.
+     *
+     * @param  string|null  $schema
+     * @param  string  $table
+     * @return string
+     */
+    public function compileIndexes($schema, $table)
+    {
+        return sprintf(
+            'select trim(i.rdb$index_name) as "name", '
+            .'i.rdb$unique_flag as "unique_flag", '
+            .'(select case when rc.rdb$constraint_type = \'PRIMARY KEY\' then 1 else 0 end '
+            .'from rdb$relation_constraints rc where rc.rdb$index_name = i.rdb$index_name) as "is_primary", '
+            .'list(trim(sg.rdb$field_name), \',\') as "columns" '
+            .'from rdb$indices i '
+            .'join rdb$index_segments sg on sg.rdb$index_name = i.rdb$index_name '
+            .'where i.rdb$relation_name = %s '
+            .'and (i.rdb$system_flag is null or i.rdb$system_flag = 0) '
+            .'group by i.rdb$index_name, i.rdb$unique_flag '
+            .'order by i.rdb$index_name',
+            $this->quoteString($table),
+        );
+    }
+
+    /**
+     * Compile the query to determine the foreign keys.
+     *
+     * @param  string|null  $schema
+     * @param  string  $table
+     * @return string
+     */
+    public function compileForeignKeys($schema, $table)
+    {
+        return sprintf(
+            'select trim(rc.rdb$constraint_name) as "name", '
+            .'list(trim(sg.rdb$field_name), \',\') as "columns", '
+            .'trim(i2.rdb$relation_name) as "foreign_table", '
+            .'list(trim(sg2.rdb$field_name), \',\') as "foreign_columns", '
+            .'trim(refc.rdb$update_rule) as "update_rule", '
+            .'trim(refc.rdb$delete_rule) as "delete_rule" '
+            .'from rdb$relation_constraints rc '
+            .'join rdb$ref_constraints refc on refc.rdb$constraint_name = rc.rdb$constraint_name '
+            .'join rdb$index_segments sg on sg.rdb$index_name = rc.rdb$index_name '
+            .'join rdb$relation_constraints rc2 on rc2.rdb$constraint_name = refc.rdb$const_name_uq '
+            .'join rdb$indices i2 on i2.rdb$index_name = rc2.rdb$index_name '
+            .'join rdb$index_segments sg2 on sg2.rdb$index_name = rc2.rdb$index_name and sg2.rdb$field_position = sg.rdb$field_position '
+            .'where rc.rdb$relation_name = %s '
+            .'and rc.rdb$constraint_type = \'FOREIGN KEY\' '
+            .'group by rc.rdb$constraint_name, i2.rdb$relation_name, refc.rdb$update_rule, refc.rdb$delete_rule '
+            .'order by rc.rdb$constraint_name',
+            $this->quoteString($table),
+        );
+    }
+
+    /**
+     * Compile a drop column command.
+     *
+     * @param  \Illuminate\Database\Schema\Blueprint  $blueprint
+     * @param  \Illuminate\Support\Fluent  $command
+     * @return string
+     */
+    public function compileDropColumn(Blueprint $blueprint, Fluent $command)
+    {
+        $table = $this->wrapTable($blueprint);
+        $columns = $this->prefixArray('DROP', $this->wrapArray($command->columns));
+        return 'ALTER TABLE '.$table.' '.implode(', ', $columns);
+    }
+
+    /**
+     * Compile a rename column command.
+     *
+     * @param  \Illuminate\Database\Schema\Blueprint  $blueprint
+     * @param  \Illuminate\Support\Fluent  $command
+     * @return string
+     */
+    public function compileRenameColumn(Blueprint $blueprint, Fluent $command)
+    {
+        $table = $this->wrapTable($blueprint);
+        return sprintf('ALTER TABLE %s ALTER COLUMN %s TO %s',
+            $table, $this->wrap($command->from), $this->wrap($command->to));
+    }
+
+    /**
+     * Compile a drop index command.
+     *
+     * @param  \Illuminate\Database\Schema\Blueprint  $blueprint
+     * @param  \Illuminate\Support\Fluent  $command
+     * @return string
+     */
+    public function compileDropIndex(Blueprint $blueprint, Fluent $command)
+    {
+        return 'DROP INDEX '.$this->wrap($command->index);
+    }
+
+    /**
+     * Compile a drop unique key command.
+     *
+     * @param  \Illuminate\Database\Schema\Blueprint  $blueprint
+     * @param  \Illuminate\Support\Fluent  $command
+     * @return string
+     */
+    public function compileDropUnique(Blueprint $blueprint, Fluent $command)
+    {
+        $table = $this->wrapTable($blueprint);
+        return "ALTER TABLE {$table} DROP CONSTRAINT {$command->index}";
+    }
+
+    /**
+     * Compile a drop primary key command.
+     *
+     * @param  \Illuminate\Database\Schema\Blueprint  $blueprint
+     * @param  \Illuminate\Support\Fluent  $command
+     * @return string
+     */
+    public function compileDropPrimary(Blueprint $blueprint, Fluent $command)
+    {
+        $table = $this->wrapTable($blueprint);
+        // Firebird requires the constraint name. Look it up or use convention.
+        $tableName = $blueprint->getTable();
+        return sprintf(
+            'execute block as declare variable cname varchar(63); begin '
+            .'select trim(rdb$constraint_name) from rdb$relation_constraints '
+            .'where rdb$relation_name = \'%s\' and rdb$constraint_type = \'PRIMARY KEY\' '
+            .'into :cname; '
+            .'if (cname is not null) then execute statement \'ALTER TABLE %s DROP CONSTRAINT \' || cname; '
+            .'end',
+            strtoupper($tableName), $table
+        );
+    }
+
+    /**
+     * Compile a change column command.
+     *
+     * @param  \Illuminate\Database\Schema\Blueprint  $blueprint
+     * @param  \Illuminate\Support\Fluent  $command
+     * @return string
+     */
+    public function compileChange(Blueprint $blueprint, Fluent $command)
+    {
+        $table = $this->wrapTable($blueprint);
+        $statements = [];
+        foreach ($blueprint->getChangedColumns() as $column) {
+            $type = $this->getType($column);
+            $statements[] = sprintf('ALTER TABLE %s ALTER COLUMN %s TYPE %s',
+                $table, $this->wrap($column->name), $type);
+        }
+        return implode('; ', $statements);
+    }
+
+    /**
+     * Get the SQL for an auto-increment column modifier.
+     *
+     * @param  \Illuminate\Database\Schema\Blueprint  $blueprint
+     * @param  \Illuminate\Support\Fluent  $column
+     * @return string|null
+     */
+    protected function modifyIncrement(Blueprint $blueprint, Fluent $column)
+    {
+        if (in_array($column->type, $this->serials) && $column->autoIncrement) {
+            return ' generated by default as identity';
+        }
     }
 }

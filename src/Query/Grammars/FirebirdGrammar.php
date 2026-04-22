@@ -207,4 +207,119 @@ class FirebirdGrammar extends Grammar
         // the insert operation in a way that returns the id.
         return $this->compileInsert($query, $values).' returning '.$this->wrap($sequence ?: 'id');
     }
+
+    /**
+     * Compile an insert statement into SQL.
+     *
+     * Firebird does not support multi-row INSERT VALUES (), (), () syntax.
+     * For multiple rows, generate separate INSERT statements.
+     *
+     * @param  \Illuminate\Database\Query\Builder  $query
+     * @param  array  $values
+     * @return string
+     */
+    public function compileInsert(Builder $query, array $values)
+    {
+        if (empty($values)) {
+            $table = $this->wrapTable($query->from);
+
+            return "insert into {$table} default values";
+        }
+
+        if (count($values) === 1) {
+            return parent::compileInsert($query, $values);
+        }
+
+        $table = $this->wrapTable($query->from);
+        $columns = $this->columnize(array_keys(reset($values)));
+
+        $sql = [];
+        foreach ($values as $record) {
+            $sql[] = 'insert into '.$table.' ('.$columns.') values ('.$this->parameterize($record).')';
+        }
+
+        return implode('; ', $sql);
+    }
+
+    /**
+     * Compile a truncate table statement into SQL.
+     *
+     * Firebird does not support TRUNCATE TABLE, so we use DELETE FROM instead.
+     *
+     * @param  \Illuminate\Database\Query\Builder  $query
+     * @return array
+     */
+    public function compileTruncate(Builder $query)
+    {
+        return ['delete from '.$this->wrapTable($query->from) => []];
+    }
+
+    /**
+     * Compile the lock into SQL.
+     *
+     * Firebird uses WITH LOCK for pessimistic locking.
+     *
+     * @param  \Illuminate\Database\Query\Builder  $query
+     * @param  bool|string  $value
+     * @return string
+     */
+    protected function compileLock(Builder $query, $value)
+    {
+        if (is_string($value)) {
+            return $value;
+        }
+
+        return $value ? 'with lock' : '';
+    }
+
+    /**
+     * Compile an "upsert" statement into SQL.
+     *
+     * Uses Firebird's UPDATE OR INSERT ... MATCHING syntax.
+     *
+     * @param  \Illuminate\Database\Query\Builder  $query
+     * @param  array  $values
+     * @param  array  $uniqueBy
+     * @param  array  $update
+     * @return string
+     */
+    public function compileUpsert(Builder $query, array $values, array $uniqueBy, array $update)
+    {
+        $table = $this->wrapTable($query->from);
+        $columns = $this->columnize(array_keys(reset($values)));
+        $matching = $this->columnize($uniqueBy);
+
+        $sql = [];
+        foreach ($values as $record) {
+            $sql[] = 'update or insert into '.$table
+                .' ('.$columns.') values ('.$this->parameterize($record).')'
+                .' matching ('.$matching.')';
+        }
+
+        return implode('; ', $sql);
+    }
+
+    /**
+     * Compile an "insert or ignore" statement into SQL.
+     *
+     * Uses Firebird's UPDATE OR INSERT syntax without MATCHING clause,
+     * which defaults to matching on the primary key.
+     *
+     * @param  \Illuminate\Database\Query\Builder  $query
+     * @param  array  $values
+     * @return string
+     */
+    public function compileInsertOrIgnore(Builder $query, array $values)
+    {
+        $table = $this->wrapTable($query->from);
+        $columns = $this->columnize(array_keys(reset($values)));
+
+        $sql = [];
+        foreach ($values as $record) {
+            $sql[] = 'update or insert into '.$table
+                .' ('.$columns.') values ('.$this->parameterize($record).')';
+        }
+
+        return implode('; ', $sql);
+    }
 }

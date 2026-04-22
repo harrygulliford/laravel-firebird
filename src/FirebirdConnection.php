@@ -100,4 +100,67 @@ class FirebirdConnection extends DatabaseConnection
     {
         return $this->query()->procedure($procedure, $bindings)->get();
     }
+
+    /**
+     * Escape a boolean value for Firebird.
+     *
+     * Firebird 2.5 uses 0/1, FB 3.0+ supports TRUE/FALSE.
+     *
+     * @param  bool  $value
+     * @return string
+     */
+    protected function escapeBool($value)
+    {
+        // Use integer representation for maximum compatibility across Firebird versions
+        return $value ? '1' : '0';
+    }
+
+    /**
+     * Escape a binary value for Firebird.
+     *
+     * @param  string  $value
+     * @return string
+     */
+    protected function escapeBinary($value)
+    {
+        $hex = bin2hex($value);
+        return "x'{$hex}'";
+    }
+
+    /**
+     * Determine if the given exception is a unique constraint error.
+     *
+     * @param  \Exception  $exception
+     * @return bool
+     */
+    protected function isUniqueConstraintError(\Exception $exception)
+    {
+        return str_contains($exception->getMessage(), 'violation of PRIMARY or UNIQUE KEY constraint')
+            || str_contains($exception->getMessage(), '-803');
+    }
+
+    /**
+     * Parse the constraint name from a unique constraint violation exception.
+     *
+     * @param  \Exception  $exception
+     * @return string|null
+     */
+    protected function parseUniqueConstraintViolation(\Exception $exception): ?string
+    {
+        if (preg_match('/constraint "([^"]+)"/', $exception->getMessage(), $matches)) {
+            return $matches[1];
+        }
+        return null;
+    }
+
+    /**
+     * Get the server major version number.
+     *
+     * @return int
+     */
+    public function getServerMajorVersion(): int
+    {
+        $version = $this->getServerVersion();
+        return (int) explode('.', $version)[0];
+    }
 }
