@@ -301,9 +301,10 @@ class SchemaGrammarTest extends TestCase
     }
 
     #[Test]
-    public function it_maps_boolean_to_smallint()
+    public function it_maps_boolean_type()
     {
-        $this->assertEquals('smallint', $this->callType('boolean'));
+        // Default server_version >= 3 → native BOOLEAN
+        $this->assertEquals('boolean', $this->callType('boolean'));
     }
 
     #[Test]

@@ -58,6 +58,8 @@
 
 namespace HarryGulliford\Firebird\Query\Grammars;
 
+use HarryGulliford\Firebird\FirebirdConnection;
+use Illuminate\Database\ConnectionInterface;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Database\Query\Grammars\Grammar;
 use Illuminate\Database\Query\JoinLateralClause;
@@ -65,6 +67,20 @@ use Illuminate\Support\Str;
 
 class FirebirdGrammar extends Grammar
 {
+    /**
+     * Check if the connection supports a given feature.
+     *
+     * Reads 'server_version' from the connection config.
+     * No runtime query — purely config-driven.
+     */
+    protected function supports(string $feature): bool
+    {
+        if ($this->connection instanceof FirebirdConnection) {
+            return $this->connection->supportsFeature($feature);
+        }
+
+        return true; // assume latest if connection type unknown
+    }
     /**
      * The components that make up a select clause.
      *
@@ -128,6 +144,11 @@ class FirebirdGrammar extends Grammar
      */
     protected function compileLimit(Builder $query, $limit)
     {
+        if (! $this->supports('fetch_first')) {
+            // FB 2.5: FIRST/SKIP handled in compileSelect()
+            return '';
+        }
+
         return 'fetch first '.(int) $limit.' rows only';
     }
 
@@ -143,6 +164,11 @@ class FirebirdGrammar extends Grammar
      */
     protected function compileOffset(Builder $query, $offset)
     {
+        if (! $this->supports('fetch_first')) {
+            // FB 2.5: FIRST/SKIP handled in compileSelect()
+            return '';
+        }
+
         return 'offset '.(int) $offset.' rows';
     }
 
@@ -154,6 +180,38 @@ class FirebirdGrammar extends Grammar
      * @param  string  $seed
      * @return string
      */
+    /**
+     * Compile a select query into SQL.
+     *
+     * On FB 2.5 (server_version < 3), injects FIRST/SKIP after SELECT keyword.
+     * On FB 3.0+, uses standard OFFSET/FETCH FIRST at end of query.
+     *
+     * FB 2.5 syntax: SELECT FIRST 10 SKIP 20 * FROM ...
+     * FB 3.0+ syntax: SELECT * FROM ... OFFSET 20 ROWS FETCH FIRST 10 ROWS ONLY
+     */
+    public function compileSelect(Builder $query)
+    {
+        $sql = parent::compileSelect($query);
+
+        if (! $this->supports('fetch_first')) {
+            $limiter = '';
+
+            if (isset($query->limit)) {
+                $limiter .= 'first '.(int) $query->limit.' ';
+            }
+
+            if (isset($query->offset)) {
+                $limiter .= 'skip '.(int) $query->offset.' ';
+            }
+
+            if ($limiter) {
+                $sql = preg_replace('/^select /i', 'select '.$limiter, $sql);
+            }
+        }
+
+        return $sql;
+    }
+
     public function compileRandom($seed)
     {
         return 'rand()';
@@ -216,6 +274,15 @@ class FirebirdGrammar extends Grammar
      */
     public function compileExists(Builder $query)
     {
+        if (! $this->supports('exists_function')) {
+            // FB 2.5: EXISTS() not usable as scalar function.
+            // Use CASE WHEN EXISTS(...) THEN 1 ELSE 0 END instead.
+            return sprintf(
+                'select case when exists(%s) then 1 else 0 end as "exists" from rdb$database',
+                $this->compileSelect($query)
+            );
+        }
+
         return sprintf('select exists(%s) as "exists" from rdb$database',
             $this->compileSelect($query));
     }
@@ -288,6 +355,12 @@ class FirebirdGrammar extends Grammar
      */
     public function compileJoinLateral(JoinLateralClause $join, string $expression): string
     {
+        if (! $this->supports('lateral')) {
+            throw new \RuntimeException(
+                'LATERAL joins require Firebird 4.0+. Set server_version >= 4 in your database config.'
+            );
+        }
+
         return trim("{$join->type} join lateral {$expression} on true");
     }
 
