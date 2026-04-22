@@ -376,9 +376,18 @@ class FirebirdGrammar extends Grammar
      */
     protected function compileAggregate(Builder $query, $aggregate)
     {
-        return Str::replaceLast(
-            'as aggregate', 'as "aggregate"', parent::compileAggregate($query, $aggregate)
-        );
+        $sql = parent::compileAggregate($query, $aggregate);
+
+        if ($this->isDialect1()) {
+            // Dialect 1: no quoting. Firebird returns AGGREGATE (uppercase).
+            // Laravel paginator accesses ->aggregate which works because
+            // PHP object property access is case-sensitive but PDO returns
+            // the case as-is from the alias. We use AGGREGATE without quotes.
+            return $sql;
+        }
+
+        // Dialect 3: wrap in double quotes to force lowercase result column name.
+        return Str::replaceLast('as aggregate', 'as "aggregate"', $sql);
     }
 
     /**
