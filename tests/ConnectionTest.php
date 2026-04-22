@@ -79,4 +79,45 @@ class ConnectionTest extends TestCase
 
         $this->assertInstanceOf(FirebirdQueryBuilder::class, $queryBuilder);
     }
+
+    #[Test]
+    public function it_gets_server_major_version()
+    {
+        $connection = DB::connection();
+        $major = $connection->getServerMajorVersion();
+
+        $this->assertIsInt($major);
+        $this->assertGreaterThanOrEqual(2, $major);
+        $this->assertLessThanOrEqual(6, $major);
+    }
+
+    #[Test]
+    public function it_gets_driver_title()
+    {
+        $connection = DB::connection();
+        $this->assertEquals('Firebird', $connection->getDriverTitle());
+    }
+
+    #[Test]
+    public function it_can_escape_bool()
+    {
+        $connection = DB::connection();
+        // escapeBool is protected, test via reflection
+        $reflection = new \ReflectionMethod($connection, 'escapeBool');
+        $reflection->setAccessible(true);
+
+        $this->assertEquals('1', $reflection->invoke($connection, true));
+        $this->assertEquals('0', $reflection->invoke($connection, false));
+    }
+
+    #[Test]
+    public function it_can_escape_binary()
+    {
+        $connection = DB::connection();
+        $reflection = new \ReflectionMethod($connection, 'escapeBinary');
+        $reflection->setAccessible(true);
+
+        $result = $reflection->invoke($connection, "\x00\xFF");
+        $this->assertEquals("x'00ff'", $result);
+    }
 }

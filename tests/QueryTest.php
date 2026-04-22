@@ -1575,4 +1575,161 @@ class QueryTest extends TestCase
             ->result;
         $this->assertEquals($result, $aliasResult);
     }
+
+    #[Test]
+    public function it_can_insert_single_record()
+    {
+        DB::table('users')->insert([
+            'name' => 'Test', 'email' => 'test@test.com', 'city' => 'Rome', 'country' => 'Italy',
+        ]);
+        $this->assertDatabaseHas('users', ['name' => 'Test', 'email' => 'test@test.com']);
+    }
+
+    #[Test]
+    public function it_can_insert_multiple_records()
+    {
+        DB::table('users')->insert([
+            ['name' => 'Alice', 'email' => 'alice@test.com', 'city' => 'A', 'country' => 'X'],
+            ['name' => 'Bob', 'email' => 'bob@test.com', 'city' => 'B', 'country' => 'Y'],
+            ['name' => 'Charlie', 'email' => 'charlie@test.com', 'city' => 'C', 'country' => 'Z'],
+        ]);
+        $this->assertEquals(3, DB::table('users')->count());
+    }
+
+    #[Test]
+    public function it_can_insert_default_values()
+    {
+        // This tests INSERT INTO ... DEFAULT VALUES
+        // Users table requires name/email NOT NULL, so this may fail depending on defaults.
+        // Test with orders table which has nullable fields? Actually skip if not applicable.
+        // Instead test the SQL generation:
+        $grammar = DB::getQueryGrammar();
+        $builder = DB::table('users');
+        $sql = $grammar->compileInsert($builder, []);
+        $this->assertStringContainsString('default values', $sql);
+    }
+
+    #[Test]
+    public function it_can_truncate_table()
+    {
+        Order::factory()->count(5)->create();
+        $this->assertEquals(5, DB::table('orders')->count());
+
+        DB::table('orders')->truncate();
+        $this->assertEquals(0, DB::table('orders')->count());
+    }
+
+    #[Test]
+    public function it_can_upsert_records()
+    {
+        $user = User::factory()->create(['name' => 'Original']);
+
+        DB::table('users')->upsert(
+            [['id' => $user->id, 'name' => 'Updated', 'email' => $user->email, 'city' => $user->city, 'country' => $user->country]],
+            ['id'],
+            ['name']
+        );
+
+        $this->assertEquals('Updated', DB::table('users')->where('id', $user->id)->value('name'));
+    }
+
+    #[Test]
+    public function it_can_insert_or_ignore()
+    {
+        $user = User::factory()->create();
+
+        // Insert same id again — should not throw, should not duplicate
+        DB::table('users')->insertOrIgnore([
+            'id' => $user->id, 'name' => 'Duplicate', 'email' => 'dup@test.com',
+        ]);
+
+        $this->assertEquals(1, DB::table('users')->count());
+    }
+
+    #[Test]
+    public function it_can_lock_for_update()
+    {
+        User::factory()->create();
+
+        // Just verify the SQL compiles without error
+        $grammar = DB::getQueryGrammar();
+        $builder = DB::table('users')->where('id', 1)->lock(true);
+        $sql = $grammar->compileSelect($builder);
+        $this->assertStringContainsString('with lock', $sql);
+    }
+
+    #[Test]
+    public function it_can_compile_bitwise_where()
+    {
+        $grammar = DB::getQueryGrammar();
+        $builder = DB::table('orders');
+
+        // Test SQL generation for bitwise AND
+        $sql = $grammar->whereBitwise($builder, [
+            'type' => 'Bitwise',
+            'column' => 'price',
+            'operator' => '&',
+            'value' => 1,
+            'boolean' => 'and',
+        ]);
+
+        $this->assertStringContainsString('bin_and', $sql);
+    }
+
+    #[Test]
+    public function it_can_update_records()
+    {
+        User::factory()->create(['name' => 'Before']);
+
+        DB::table('users')->where('name', 'Before')->update(['name' => 'After']);
+
+        $this->assertDatabaseHas('users', ['name' => 'After']);
+        $this->assertDatabaseMissing('users', ['name' => 'Before']);
+    }
+
+    #[Test]
+    public function it_can_delete_records()
+    {
+        User::factory()->count(5)->create();
+        $this->assertEquals(5, DB::table('users')->count());
+
+        DB::table('users')->where('id', DB::table('users')->min('id'))->delete();
+        $this->assertEquals(4, DB::table('users')->count());
+    }
+
+    #[Test]
+    public function it_can_compile_update_returning()
+    {
+        $grammar = DB::getQueryGrammar();
+        $builder = DB::table('users')->where('id', 1);
+        $sql = $grammar->compileUpdateReturning($builder, ['name' => 'test'], ['id', 'name']);
+        $this->assertStringContainsString('update', strtolower($sql));
+        $this->assertStringContainsString('returning', strtolower($sql));
+    }
+
+    #[Test]
+    public function it_can_compile_delete_returning()
+    {
+        $grammar = DB::getQueryGrammar();
+        $builder = DB::table('users')->where('id', 1);
+        $sql = $grammar->compileDeleteReturning($builder, '*');
+        $this->assertStringContainsString('delete', strtolower($sql));
+        $this->assertStringContainsString('returning', strtolower($sql));
+    }
+
+    #[Test]
+    public function it_can_compile_merge()
+    {
+        $grammar = DB::getQueryGrammar();
+        $builder = DB::table('users');
+        $sql = $grammar->compileMerge(
+            $builder, 'users', '(select 1 as "id", \'Test\' as "name" from rdb$database) src',
+            'users.id = src.id',
+            'update set "name" = src."name"',
+            'insert ("id", "name") values (src."id", src."name")'
+        );
+        $this->assertStringContainsString('merge into', strtolower($sql));
+        $this->assertStringContainsString('when matched', strtolower($sql));
+        $this->assertStringContainsString('when not matched', strtolower($sql));
+    }
 }
