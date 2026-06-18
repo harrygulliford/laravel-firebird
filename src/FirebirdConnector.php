@@ -46,6 +46,10 @@ class FirebirdConnector extends Connector implements ConnectorInterface
             $dsn .= "charset={$config['charset']};";
         }
 
+        if (isset($config['dialect'])) {
+            $dsn .= "dialect={$config['dialect']};";
+        }
+
         return $dsn;
     }
 }
