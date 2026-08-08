@@ -130,7 +130,7 @@ class FirebirdGrammar extends Grammar
      */
     public function compileExists(Builder $query)
     {
-        return sprintf('select exists(%s) as "exists" from rdb$database',
+        return sprintf('select case when exists(%s) then 1 else 0 end as "exists" from rdb$database',
             $this->compileSelect($query));
     }
 

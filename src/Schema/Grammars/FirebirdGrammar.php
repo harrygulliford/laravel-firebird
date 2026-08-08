@@ -32,8 +32,9 @@ class FirebirdGrammar extends Grammar
     public function compileTableExists($schema, $table)
     {
         return sprintf(
-            'select exists (select 1 from rdb$relations where rdb$relation_name = %s and rdb$relation_type = 0 and '
-            .'(rdb$system_flag is null or rdb$system_flag = 0)) as "exists" from rdb$database',
+            'select case when exists (select 1 from rdb$relations where rdb$relation_name = %s and '
+            .'rdb$relation_type = 0 and (rdb$system_flag is null or rdb$system_flag = 0)) then 1 else 0 end '
+            .'as "exists" from rdb$database',
             $this->quoteString($table),
         );
     }
