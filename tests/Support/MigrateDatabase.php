@@ -42,18 +42,9 @@ trait MigrateDatabase
 
     public function dropTables(): void
     {
-        $tables = [
-            'orders',
-            'users',
-            // Can be left behind if the test suite exits unexpectedly:
-            'contacts',
-            'foo',
-            'bar',
-        ];
-
-        foreach ($tables as $table) {
-            Schema::dropIfExists($table);
-        }
+        // Also clears anything left behind if the test suite exited unexpectedly.
+        Schema::dropAllViews();
+        Schema::dropAllTables();
     }
 
     public function createProcedures()

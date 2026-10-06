@@ -47,6 +47,8 @@ These previously generated invalid SQL or silently did nothing, and now throw a 
 
 ### Added
 
+- `Schema::dropAllTables()` and `Schema::dropAllViews()`, so `migrate:fresh` and `db:wipe` work. Previously they threw an exception.
+- `Schema::getViews()` and `Schema::hasView()`.
 - `dropColumn()`, `dropPrimary()`, `dropUnique()` and `dropIndex()`. These previously did nothing.
 - `change()` for altering a column's type, default and nullability. Only the attributes that differ from the existing column are altered.
 - Full `Schema::getColumns()` details (type, nullability, default, auto-increment, collation, comment, generation), plus `Schema::getIndexes()`, `Schema::getForeignKeys()` and `Schema::hasIndex()`.

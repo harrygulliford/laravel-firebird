@@ -66,6 +66,38 @@ class FirebirdGrammar extends Grammar
     }
 
     /**
+     * Compile the query to determine the views.
+     *
+     * @param  string|string[]|null  $schema
+     * @return string
+     */
+    public function compileViews($schema)
+    {
+        return 'select trim(trailing from rdb$relation_name) as "name", rdb$view_source as "definition" '
+            .'from rdb$relations '
+            .'where rdb$relation_type = 1 '
+            .'and (rdb$system_flag is null or rdb$system_flag = 0) '
+            .'order by rdb$relation_name';
+    }
+
+    /**
+     * Compile the command to drop all foreign keys of user tables.
+     *
+     * @return string
+     */
+    public function compileDropAllForeignKeys()
+    {
+        return 'execute block as '
+            .'declare r varchar(63) character set utf8; declare c varchar(63) character set utf8; begin '
+            .'for select trim(rc.rdb$relation_name), trim(rc.rdb$constraint_name) from rdb$relation_constraints rc '
+            .'join rdb$relations t on t.rdb$relation_name = rc.rdb$relation_name '
+            .'where rc.rdb$constraint_type = \'FOREIGN KEY\' and (t.rdb$system_flag is null or t.rdb$system_flag = 0) '
+            .'into :r, :c do '
+            .'execute statement \'ALTER TABLE "\' || replace(r, \'"\', \'""\') || \'" DROP CONSTRAINT "\' || replace(c, \'"\', \'""\') || \'"\'; '
+            .'end';
+    }
+
+    /**
      * Compile the query to determine the columns.
      *
      * @param  string|null  $schema

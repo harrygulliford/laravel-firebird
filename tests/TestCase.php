@@ -38,4 +38,12 @@ class TestCase extends OrchestraTestCase
             'charset' => env('DB_CHARSET', 'UTF8'),
         ]);
     }
+
+    protected function tearDown(): void
+    {
+        // Close the connection, so its locks can't block DDL in later tests.
+        $this->app['db']->disconnect();
+
+        parent::tearDown();
+    }
 }

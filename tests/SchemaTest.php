@@ -522,6 +522,40 @@ class SchemaTest extends TestCase
     }
 
     #[Test]
+    public function it_can_drop_all_views_and_tables()
+    {
+        Schema::dropIfExists('foo');
+        Schema::dropIfExists('bar');
+
+        Schema::create('bar', function (Blueprint $table) {
+            $table->id();
+        });
+
+        Schema::create('foo', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('bar_id')->constrained('bar');
+        });
+
+        // "foo_view" depends on "bar_view", which sorts (and is dropped) first.
+        DB::statement('create view "bar_view" as select "id" from "bar"');
+        DB::statement('create view "foo_view" as select "id" from "bar_view"');
+
+        $this->assertSame(['bar_view', 'foo_view'], array_column(Schema::getViews(), 'name'));
+        $this->assertTrue(Schema::hasView('foo_view'));
+
+        Schema::dropAllViews();
+
+        $this->assertSame([], Schema::getViews());
+
+        Schema::dropAllTables();
+
+        $this->assertSame([], Schema::getTableListing());
+
+        // Restore the shared tables for the remaining tests.
+        $this->createTables();
+    }
+
+    #[Test]
     public function it_throws_an_exception_for_creating_temporary_tables()
     {
         Schema::dropIfExists('foo');
