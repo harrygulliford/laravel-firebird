@@ -415,6 +415,34 @@ class SchemaTest extends TestCase
     }
 
     #[Test]
+    public function it_creates_time_zone_columns()
+    {
+        Schema::dropIfExists('foo');
+
+        Schema::create('foo', function (Blueprint $table) {
+            $table->integer('id');
+            $table->timestampTz('a')->useCurrent();
+            $table->timestampTz('b')->nullable();
+            $table->timeTz('c')->nullable();
+        });
+
+        DB::table('foo')->insert(['id' => 1, 'b' => '2026-10-06 11:00:00 +10:00', 'c' => '11:00:00 +10:00']);
+
+        $row = DB::table('foo')->first();
+
+        $this->assertNotNull($row->a);
+        $this->assertSame('2026-10-06 11:00:00 +10:00', $row->b);
+        $this->assertSame('11:00:00 +10:00', $row->c);
+
+        $types = collect(Schema::getColumns('foo'))->pluck('type', 'name')->all();
+        $this->assertSame('timestamp with time zone', $types['b']);
+        $this->assertSame('time with time zone', $types['c']);
+
+        // Clean up...
+        Schema::drop('foo');
+    }
+
+    #[Test]
     public function it_throws_an_exception_for_creating_temporary_tables()
     {
         Schema::dropIfExists('foo');

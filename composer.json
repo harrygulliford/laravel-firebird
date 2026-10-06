@@ -4,7 +4,7 @@
   "description": "Firebird database driver for the Laravel Framework",
   "license": "MIT",
   "require": {
-    "php": "^8.3",
+    "php": "^8.4",
     "illuminate/support": "^13.0",
     "illuminate/container": "^13.0",
     "illuminate/database": "^13.0",

@@ -240,4 +240,19 @@ class SchemaGrammarTest extends BaseTestCase
             .'"d" BINARY(16) NOT NULL, "e" VARBINARY(100) NOT NULL)',
         ], $sql);
     }
+
+    #[Test]
+    public function it_compiles_time_zone_types()
+    {
+        $sql = $this->compile('users', function (Blueprint $table) {
+            $table->timestampTz('a')->useCurrent();
+            $table->dateTimeTz('b')->nullable();
+            $table->timeTz('c')->nullable();
+        }, create: true);
+
+        $this->assertSame([
+            'create table "users" ("a" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL, '
+            .'"b" TIMESTAMP WITH TIME ZONE, "c" TIME WITH TIME ZONE)',
+        ], $sql);
+    }
 }
