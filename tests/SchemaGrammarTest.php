@@ -255,4 +255,20 @@ class SchemaGrammarTest extends BaseTestCase
             .'"b" TIMESTAMP WITH TIME ZONE, "c" TIME WITH TIME ZONE)',
         ], $sql);
     }
+
+    #[Test]
+    public function it_compiles_native_booleans()
+    {
+        $sql = $this->compile('users', function (Blueprint $table) {
+            $table->boolean('a')->default(true);
+            $table->boolean('b')->default(0);
+            $table->boolean('c')->default('1');
+            $table->boolean('d')->nullable();
+        }, create: true);
+
+        $this->assertSame([
+            'create table "users" ("a" BOOLEAN DEFAULT TRUE NOT NULL, "b" BOOLEAN DEFAULT FALSE NOT NULL, '
+            .'"c" BOOLEAN DEFAULT TRUE NOT NULL, "d" BOOLEAN)',
+        ], $sql);
+    }
 }

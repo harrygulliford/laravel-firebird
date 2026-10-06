@@ -568,6 +568,11 @@ class FirebirdGrammar extends Grammar
             return null;
         }
 
+        // Firebird only casts the strings 'true' and 'false' to booleans.
+        if ($column->type === 'boolean' && is_scalar($column->default)) {
+            return filter_var($column->default, FILTER_VALIDATE_BOOLEAN) ? ' DEFAULT TRUE' : ' DEFAULT FALSE';
+        }
+
         if (! is_null($column->default)) {
             return ' DEFAULT '.$this->getDefaultValue($column->default);
         }
@@ -772,7 +777,7 @@ class FirebirdGrammar extends Grammar
      */
     protected function typeBoolean(Fluent $column)
     {
-        return 'CHAR(1)';
+        return 'BOOLEAN';
     }
 
     /**

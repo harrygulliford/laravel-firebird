@@ -443,6 +443,31 @@ class SchemaTest extends TestCase
     }
 
     #[Test]
+    public function it_creates_boolean_columns()
+    {
+        Schema::dropIfExists('foo');
+
+        Schema::create('foo', function (Blueprint $table) {
+            $table->integer('id');
+            $table->boolean('active')->default(true);
+            $table->boolean('admin')->nullable();
+        });
+
+        DB::table('foo')->insert(['id' => 1, 'admin' => false]);
+        DB::table('foo')->insert(['id' => 2, 'active' => false, 'admin' => true]);
+
+        $this->assertSame(true, DB::table('foo')->where('id', 1)->value('active'));
+        $this->assertSame([1], DB::table('foo')->where('admin', false)->pluck('id')->all());
+        $this->assertSame([2], DB::table('foo')->where('active', false)->pluck('id')->all());
+
+        $this->assertSame('boolean', Schema::getColumnType('foo', 'active'));
+        $this->assertSame('true', strtolower(collect(Schema::getColumns('foo'))->firstWhere('name', 'active')['default']));
+
+        // Clean up...
+        Schema::drop('foo');
+    }
+
+    #[Test]
     public function it_throws_an_exception_for_creating_temporary_tables()
     {
         Schema::dropIfExists('foo');
