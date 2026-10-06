@@ -117,4 +117,22 @@ class SchemaGrammarTest extends BaseTestCase
 
         $this->compile('users', fn (Blueprint $table) => $table->rename('people'));
     }
+
+    #[Test]
+    public function it_compiles_full_length_quoted_constraint_names()
+    {
+        $sql = $this->compile('a_rather_long_table_name', function (Blueprint $table) {
+            $table->primary('id');
+            $table->unique('another_long_column_name');
+            $table->foreign('another_long_user_id')->references('id')->on('users');
+            $table->dropForeign(['another_long_user_id']);
+        });
+
+        $this->assertSame([
+            'ALTER TABLE "a_rather_long_table_name" ADD CONSTRAINT "a_rather_long_table_name_id_primary" PRIMARY KEY ("id")',
+            'ALTER TABLE "a_rather_long_table_name" ADD CONSTRAINT "a_rather_long_table_name_another_long_column_name_unique" UNIQUE ("another_long_column_name")',
+            'alter table "a_rather_long_table_name" add constraint "a_rather_long_table_name_another_long_user_id_foreign" foreign key ("another_long_user_id") references "users" ("id")',
+            'ALTER TABLE "a_rather_long_table_name" DROP CONSTRAINT "a_rather_long_table_name_another_long_user_id_foreign"',
+        ], $sql);
+    }
 }

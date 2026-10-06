@@ -158,9 +158,11 @@ class FirebirdGrammar extends Grammar
      */
     public function compilePrimary(Blueprint $blueprint, Fluent $command)
     {
-        $columns = $this->columnize($command->columns);
-
-        return 'ALTER TABLE '.$this->wrapTable($blueprint)." ADD PRIMARY KEY ({$columns})";
+        return sprintf('ALTER TABLE %s ADD CONSTRAINT %s PRIMARY KEY (%s)',
+            $this->wrapTable($blueprint),
+            $this->wrap($command->index),
+            $this->columnize($command->columns)
+        );
     }
 
     /**
@@ -174,7 +176,7 @@ class FirebirdGrammar extends Grammar
     {
         $table = $this->wrapTable($blueprint);
 
-        $index = $this->wrap(substr($command->index, 0, 31));
+        $index = $this->wrap($command->index);
 
         $columns = $this->columnize($command->columns);
 
@@ -192,51 +194,11 @@ class FirebirdGrammar extends Grammar
     {
         $columns = $this->columnize($command->columns);
 
-        $index = $this->wrap(substr($command->index, 0, 31));
+        $index = $this->wrap($command->index);
 
         $table = $this->wrapTable($blueprint);
 
         return "CREATE INDEX {$index} ON {$table} ($columns)";
-    }
-
-    /**
-     * Compile a foreign key command.
-     *
-     * @param  \Illuminate\Database\Schema\Blueprint  $blueprint
-     * @param  \Illuminate\Support\Fluent  $command
-     * @return string
-     */
-    public function compileForeign(Blueprint $blueprint, Fluent $command)
-    {
-        $table = $this->wrapTable($blueprint);
-
-        $on = $this->wrapTable($command->on);
-
-        // We need to prepare several of the elements of the foreign key definition
-        // before we can create the SQL, such as wrapping the tables and convert
-        // an array of columns to comma-delimited strings for the SQL queries.
-        $columns = $this->columnize($command->columns);
-
-        $onColumns = $this->columnize((array) $command->references);
-
-        $fkName = substr($command->index, 0, 31);
-
-        $sql = "ALTER TABLE {$table} ADD CONSTRAINT {$fkName} ";
-
-        $sql .= "FOREIGN KEY ({$columns}) REFERENCES {$on} ({$onColumns})";
-
-        // Once we have the basic foreign key creation statement constructed we can
-        // build out the syntax for what should happen on an update or delete of
-        // the affected columns, which will get something like "cascade", etc.
-        if (! is_null($command->onDelete)) {
-            $sql .= " ON DELETE {$command->onDelete}";
-        }
-
-        if (! is_null($command->onUpdate)) {
-            $sql .= " ON UPDATE {$command->onUpdate}";
-        }
-
-        return $sql;
     }
 
     /**
@@ -248,9 +210,7 @@ class FirebirdGrammar extends Grammar
      */
     public function compileDropForeign(Blueprint $blueprint, Fluent $command)
     {
-        $table = $this->wrapTable($blueprint);
-
-        return "ALTER TABLE {$table} DROP CONSTRAINT {$command->index}";
+        return $this->compileDropUnique($blueprint, $command);
     }
 
     /**

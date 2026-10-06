@@ -208,6 +208,33 @@ class SchemaTest extends TestCase
     }
 
     #[Test]
+    public function it_can_add_and_drop_foreign_keys_with_long_names()
+    {
+        Schema::dropIfExists('foo');
+
+        Schema::create('foo', function (Blueprint $table) {
+            $table->id();
+            $table->integer('a_really_long_user_reference_id');
+            $table->foreign('a_really_long_user_reference_id')->references('id')->on('users');
+        });
+
+        $countForeignKeys = fn () => DB::scalar(
+            'select count(*) from rdb$relation_constraints where rdb$relation_name = \'foo\' and rdb$constraint_type = \'FOREIGN KEY\''
+        );
+
+        $this->assertEquals(1, $countForeignKeys());
+
+        Schema::table('foo', function (Blueprint $table) {
+            $table->dropForeign(['a_really_long_user_reference_id']);
+        });
+
+        $this->assertEquals(0, $countForeignKeys());
+
+        // Clean up...
+        Schema::drop('foo');
+    }
+
+    #[Test]
     public function it_throws_an_exception_for_creating_temporary_tables()
     {
         Schema::dropIfExists('foo');
