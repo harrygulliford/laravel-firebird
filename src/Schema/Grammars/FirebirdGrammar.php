@@ -202,6 +202,25 @@ class FirebirdGrammar extends Grammar
     }
 
     /**
+     * Compile a foreign key command.
+     *
+     * @param  \Illuminate\Database\Schema\Blueprint  $blueprint
+     * @param  \Illuminate\Support\Fluent  $command
+     * @return string
+     */
+    public function compileForeign(Blueprint $blueprint, Fluent $command)
+    {
+        // Firebird has no RESTRICT action. NO ACTION is equivalent, as constraints aren't deferrable.
+        foreach (['onDelete', 'onUpdate'] as $action) {
+            if (strtolower((string) $command->{$action}) === 'restrict') {
+                $command->{$action} = 'no action';
+            }
+        }
+
+        return parent::compileForeign($blueprint, $command);
+    }
+
+    /**
      * Compile a drop foreign key command.
      *
      * @param  \Illuminate\Database\Schema\Blueprint  $blueprint

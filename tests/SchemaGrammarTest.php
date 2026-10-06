@@ -147,4 +147,17 @@ class SchemaGrammarTest extends BaseTestCase
             $sql[0]
         );
     }
+
+    #[Test]
+    public function it_compiles_restrict_foreign_key_actions_as_no_action()
+    {
+        $sql = $this->compile('orders', function (Blueprint $table) {
+            $table->foreign('user_id')->references('id')->on('users')->restrictOnDelete()->restrictOnUpdate();
+        });
+
+        $this->assertSame(
+            'alter table "orders" add constraint "orders_user_id_foreign" foreign key ("user_id") references "users" ("id") on delete no action on update no action',
+            $sql[0]
+        );
+    }
 }

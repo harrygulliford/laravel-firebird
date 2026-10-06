@@ -215,7 +215,7 @@ class SchemaTest extends TestCase
         Schema::create('foo', function (Blueprint $table) {
             $table->id();
             $table->integer('a_really_long_user_reference_id');
-            $table->foreign('a_really_long_user_reference_id')->references('id')->on('users');
+            $table->foreign('a_really_long_user_reference_id')->references('id')->on('users')->restrictOnDelete()->cascadeOnUpdate();
         });
 
         $countForeignKeys = fn () => DB::scalar(
