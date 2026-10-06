@@ -118,6 +118,41 @@ class SchemaTest extends TestCase
     }
 
     #[Test]
+    public function it_can_create_columns_with_modifiers()
+    {
+        Schema::dropIfExists('foo');
+
+        Schema::create('foo', function (Blueprint $table) {
+            $table->id();
+            $table->string('name')->charset('UTF8')->collation('UNICODE_CI')->default("O'Brien");
+            $table->enum('status', ['a', 'b'])->default('a');
+            $table->timestamp('seen_at')->useCurrent();
+        });
+
+        DB::table('foo')->insert(['id' => 1]);
+
+        $row = DB::table('foo')->first();
+
+        $this->assertSame("O'Brien", $row->name);
+        $this->assertSame('a', $row->status);
+        $this->assertNotNull($row->seen_at);
+
+        // Case-insensitive collation applies.
+        $this->assertSame(1, DB::table('foo')->where('name', "o'brien")->count());
+
+        // Enum check constraint applies.
+        try {
+            DB::table('foo')->update(['status' => 'c']);
+            $this->fail('The enum check constraint was not applied.');
+        } catch (\Illuminate\Database\QueryException) {
+            // Expected.
+        }
+
+        // Clean up...
+        Schema::drop('foo');
+    }
+
+    #[Test]
     public function it_throws_an_exception_for_creating_temporary_tables()
     {
         Schema::dropIfExists('foo');

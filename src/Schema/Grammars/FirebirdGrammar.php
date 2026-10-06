@@ -6,14 +6,17 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Schema\Grammars\Grammar;
 use Illuminate\Support\Fluent;
 
+use function Illuminate\Support\enum_value;
+
 class FirebirdGrammar extends Grammar
 {
     /**
-     * The possible column modifiers.
+     * The possible column modifiers, in the order Firebird expects them:
+     * colname type [CHARACTER SET] [DEFAULT] [constraints] [COLLATE].
      *
      * @var array
      */
-    protected $modifiers = ['Charset', 'Collate', 'Increment', 'Nullable', 'Default'];
+    protected $modifiers = ['Charset', 'Increment', 'Default', 'Nullable', 'Check', 'Collate'];
 
     /**
      * The columns available as serials.
@@ -334,9 +337,47 @@ class FirebirdGrammar extends Grammar
     protected function modifyDefault(Blueprint $blueprint, Fluent $column)
     {
         // Identity columns cannot have a default value.
-        if (! is_null($column->default) && ! $this->isIdentity($column)) {
+        if ($this->isIdentity($column)) {
+            return null;
+        }
+
+        if (! is_null($column->default)) {
             return ' DEFAULT '.$this->getDefaultValue($column->default);
         }
+
+        // CURRENT_TIMESTAMP is time zone aware, LOCALTIMESTAMP is not.
+        if ($column->useCurrent) {
+            return ' DEFAULT LOCALTIMESTAMP';
+        }
+    }
+
+    /**
+     * Get the SQL for a check constraint column modifier.
+     *
+     * @param  \Illuminate\Database\Schema\Blueprint  $blueprint
+     * @param  \Illuminate\Support\Fluent  $column
+     * @return string|null
+     */
+    protected function modifyCheck(Blueprint $blueprint, Fluent $column)
+    {
+        if ($column->type === 'enum') {
+            return sprintf(' CHECK (%s IN (%s))', $this->wrap($column), $this->quoteString($column->allowed));
+        }
+    }
+
+    /**
+     * Quote the given string literal.
+     *
+     * @param  string|array  $value
+     * @return string
+     */
+    public function quoteString($value)
+    {
+        if (is_array($value)) {
+            return implode(', ', array_map([$this, __FUNCTION__], $value));
+        }
+
+        return "'".str_replace("'", "''", enum_value($value))."'";
     }
 
     /**
@@ -501,11 +542,7 @@ class FirebirdGrammar extends Grammar
      */
     protected function typeEnum(Fluent $column)
     {
-        $allowed = array_map(function ($a) {
-            return "'".$a."'";
-        }, $column->allowed);
-
-        return "VARCHAR(255) CHECK (\"{$column->name}\" IN (".implode(', ', $allowed).'))';
+        return 'VARCHAR(255)';
     }
 
     /**
@@ -595,10 +632,6 @@ class FirebirdGrammar extends Grammar
      */
     protected function typeTimestamp(Fluent $column)
     {
-        if ($column->useCurrent) {
-            return 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP';
-        }
-
         return 'TIMESTAMP';
     }
 
