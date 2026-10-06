@@ -12,21 +12,12 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest]
-        php: [8.5, 8.4, 8.3, 8.2]
-        laravel: [13.*, 12.*]
+        php: [8.5, 8.4, 8.3]
         stability: [prefer-lowest, prefer-stable]
-        firebird: [5, 4]
-        include:
-          - laravel: 13.*
-            testbench: ^11.0
-          - laravel: 12.*
-            testbench: ^10.3
-        exclude:
-          - php: 8.2
-            laravel: 13.*
+        firebird: [5]
       fail-fast: false
 
-    name: PHP ${{ matrix.php }}, Laravel ${{ matrix.laravel }}, Firebird ${{ matrix.firebird }}, ${{ matrix.stability }}
+    name: PHP ${{ matrix.php }}, Firebird ${{ matrix.firebird }}, ${{ matrix.stability }}
 
     services:
       firebird:
@@ -51,7 +42,6 @@ jobs:
 
       - name: Install dependencies
         run: |
-          composer require "laravel/framework:${{ matrix.laravel }}" "orchestra/testbench:${{ matrix.testbench }}" "phpunit/phpunit:${{ matrix.php == 8.2 && '^11.5' || '^12.0' }}" --no-interaction --no-update
           composer update --${{ matrix.stability }} --prefer-dist --no-interaction
 
       - name: Run tests
