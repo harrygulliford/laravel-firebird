@@ -476,6 +476,25 @@ class SchemaTest extends TestCase
     }
 
     #[Test]
+    public function it_stores_large_json_values()
+    {
+        Schema::dropIfExists('foo');
+
+        Schema::create('foo', function (Blueprint $table) {
+            $table->json('data');
+        });
+
+        $json = json_encode(['text' => str_repeat('a', 20000)]);
+
+        DB::table('foo')->insert(['data' => $json]);
+
+        $this->assertSame($json, DB::table('foo')->value('data'));
+
+        // Clean up...
+        Schema::drop('foo');
+    }
+
+    #[Test]
     public function it_throws_an_exception_for_creating_temporary_tables()
     {
         Schema::dropIfExists('foo');

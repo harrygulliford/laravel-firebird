@@ -271,4 +271,15 @@ class SchemaGrammarTest extends BaseTestCase
             .'"c" BOOLEAN DEFAULT TRUE NOT NULL, "d" BOOLEAN)',
         ], $sql);
     }
+
+    #[Test]
+    public function it_compiles_json_as_text_blobs()
+    {
+        $sql = $this->compile('users', function (Blueprint $table) {
+            $table->json('a');
+            $table->jsonb('b');
+        }, create: true);
+
+        $this->assertSame(['create table "users" ("a" BLOB SUB_TYPE TEXT NOT NULL, "b" BLOB SUB_TYPE TEXT NOT NULL)'], $sql);
+    }
 }

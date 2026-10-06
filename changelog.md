@@ -17,6 +17,7 @@
   - **These require pdo_firebird built against a Firebird 4+ client library.** With a Firebird 3 client (e.g. Debian/Ubuntu's `libfbclient2` 3.0 packages), any query that selects or binds a time zone column fails with `Data type unknown`. If you can't upgrade the client, set `DataTypeCompatibility = 3.0` in the server's `firebird.conf`, or avoid the `*Tz()` column types.
 - `float()` respects its precision, so the default `float('x')` (precision 53) creates a double precision column instead of single precision `FLOAT`.
 - `binary()` with a length creates `BINARY(n)` (`fixed: true`) or `VARBINARY(n)` instead of a blob.
+- `json()` and `jsonb()` create `BLOB SUB_TYPE TEXT` columns instead of `VARCHAR(8191)` (and `VARCHAR(8191) CHARACTER SET OCTETS` for `jsonb()`), so JSON is no longer limited to 8191 characters.
 - `useCurrent()` defaults to `LOCALTIMESTAMP` for non time zone columns and `CURRENT_TIMESTAMP` for time zone columns. Since Firebird 4, `CURRENT_TIMESTAMP` returns a time zone aware value.
 
 **Auto-increment columns**
