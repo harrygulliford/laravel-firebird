@@ -417,6 +417,13 @@ class SchemaTest extends TestCase
     #[Test]
     public function it_creates_time_zone_columns()
     {
+        // pdo_firebird only handles time zone types when built against a Firebird 4+ client.
+        $client = DB::connection()->getPdo()->getAttribute(\PDO::ATTR_CLIENT_VERSION);
+
+        if (preg_match('/V(\d+)\./', $client, $matches) && $matches[1] < 4) {
+            $this->markTestSkipped("Time zone types require a Firebird 4+ client library, found [{$client}].");
+        }
+
         Schema::dropIfExists('foo');
 
         Schema::create('foo', function (Blueprint $table) {
