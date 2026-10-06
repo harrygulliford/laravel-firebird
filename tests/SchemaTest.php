@@ -367,6 +367,27 @@ class SchemaTest extends TestCase
     }
 
     #[Test]
+    public function it_can_create_virtual_generated_columns()
+    {
+        Schema::dropIfExists('foo');
+
+        Schema::create('foo', function (Blueprint $table) {
+            $table->integer('a');
+            $table->integer('b')->virtualAs('"a" * 2');
+        });
+
+        DB::table('foo')->insert(['a' => 21]);
+
+        $this->assertEquals(42, DB::table('foo')->value('b'));
+
+        $column = collect(Schema::getColumns('foo'))->firstWhere('name', 'b');
+        $this->assertSame(['type' => 'virtual', 'expression' => '"a" * 2'], $column['generation']);
+
+        // Clean up...
+        Schema::drop('foo');
+    }
+
+    #[Test]
     public function it_throws_an_exception_for_creating_temporary_tables()
     {
         Schema::dropIfExists('foo');
