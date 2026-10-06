@@ -201,4 +201,26 @@ class SchemaGrammarTest extends BaseTestCase
             'ALTER TABLE "users" ALTER COLUMN "price" TYPE DECIMAL(10, 2), ALTER COLUMN "price" SET DEFAULT \'0\', ALTER COLUMN "price" SET NOT NULL',
         ], $sql);
     }
+
+    #[Test]
+    public function it_compiles_tiny_text_year_and_virtual_columns()
+    {
+        $sql = $this->compile('users', function (Blueprint $table) {
+            $table->tinyText('a');
+            $table->year('b');
+            $table->integer('c')->virtualAs('"b" + 1')->nullable(false)->default(1);
+        }, create: true);
+
+        $this->assertSame([
+            'create table "users" ("a" VARCHAR(255) NOT NULL, "b" SMALLINT NOT NULL, "c" INTEGER GENERATED ALWAYS AS ("b" + 1))',
+        ], $sql);
+    }
+
+    #[Test]
+    public function it_throws_for_stored_generated_columns()
+    {
+        $this->expectException(\LogicException::class);
+
+        $this->compile('users', fn (Blueprint $table) => $table->integer('c')->storedAs('1'), create: true);
+    }
 }

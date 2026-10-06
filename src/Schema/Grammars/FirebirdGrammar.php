@@ -457,6 +457,31 @@ class FirebirdGrammar extends Grammar
     }
 
     /**
+     * Add the column modifiers to the definition.
+     *
+     * @param  string  $sql
+     * @param  \Illuminate\Database\Schema\Blueprint  $blueprint
+     * @param  \Illuminate\Support\Fluent  $column
+     * @return string
+     *
+     * @throws \LogicException
+     */
+    protected function addModifiers($sql, Blueprint $blueprint, Fluent $column)
+    {
+        if (! is_null($column->storedAs)) {
+            throw new \LogicException('This database driver does not support stored generated columns.');
+        }
+
+        // Computed columns are always virtual and take no other modifiers.
+        if (! is_null($column->virtualAs)) {
+            return $sql.$this->modifyCharset($blueprint, $column)
+                .' GENERATED ALWAYS AS ('.$this->getValue($column->virtualAs).')';
+        }
+
+        return parent::addModifiers($sql, $blueprint, $column);
+    }
+
+    /**
      * Get the SQL for a character set column modifier.
      *
      * @param  \Illuminate\Database\Schema\Blueprint  $blueprint
@@ -602,6 +627,17 @@ class FirebirdGrammar extends Grammar
     protected function typeString(Fluent $column)
     {
         return "VARCHAR({$column->length})";
+    }
+
+    /**
+     * Create the column definition for a tiny text type.
+     *
+     * @param  \Illuminate\Support\Fluent  $column
+     * @return string
+     */
+    protected function typeTinyText(Fluent $column)
+    {
+        return 'VARCHAR(255)';
     }
 
     /**
@@ -801,6 +837,17 @@ class FirebirdGrammar extends Grammar
     {
         // No timezone support, default to plain date time
         return $this->typeDateTime($column);
+    }
+
+    /**
+     * Create the column definition for a year type.
+     *
+     * @param  \Illuminate\Support\Fluent  $column
+     * @return string
+     */
+    protected function typeYear(Fluent $column)
+    {
+        return 'SMALLINT';
     }
 
     /**
