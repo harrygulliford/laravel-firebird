@@ -211,11 +211,18 @@ class SchemaTest extends TestCase
     public function it_can_add_and_drop_foreign_keys_with_long_names()
     {
         Schema::dropIfExists('foo');
+        Schema::dropIfExists('bar');
+
+        // Reference a fresh table: adding a foreign key needs an exclusive lock on the
+        // referenced table, which connections from earlier tests may still hold on "users".
+        Schema::create('bar', function (Blueprint $table) {
+            $table->id();
+        });
 
         Schema::create('foo', function (Blueprint $table) {
             $table->id();
-            $table->integer('a_really_long_user_reference_id');
-            $table->foreign('a_really_long_user_reference_id')->references('id')->on('users')->restrictOnDelete()->cascadeOnUpdate();
+            $table->foreignId('a_really_long_user_reference_id');
+            $table->foreign('a_really_long_user_reference_id')->references('id')->on('bar')->restrictOnDelete()->cascadeOnUpdate();
         });
 
         $countForeignKeys = fn () => DB::scalar(
@@ -232,6 +239,7 @@ class SchemaTest extends TestCase
 
         // Clean up...
         Schema::drop('foo');
+        Schema::drop('bar');
     }
 
     #[Test]

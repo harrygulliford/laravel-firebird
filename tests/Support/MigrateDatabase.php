@@ -48,6 +48,7 @@ trait MigrateDatabase
             // Can be left behind if the test suite exits unexpectedly:
             'contacts',
             'foo',
+            'bar',
         ];
 
         foreach ($tables as $table) {
