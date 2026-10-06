@@ -4,6 +4,7 @@ namespace HarryGulliford\Firebird\Schema\Grammars;
 
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Schema\Grammars\Grammar;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Fluent;
 
 use function Illuminate\Support\enum_value;
@@ -342,6 +343,62 @@ class FirebirdGrammar extends Grammar
         $columns = $this->prefixArray('DROP', $this->wrapArray($command->columns));
 
         return 'ALTER TABLE '.$this->wrapTable($blueprint).' '.implode(', ', $columns);
+    }
+
+    /**
+     * Compile a change column command.
+     *
+     * Only the attributes that differ from the existing column are altered, as Firebird
+     * rejects some no-op changes (e.g. dropping a default that doesn't exist, or
+     * re-declaring the type of a key column).
+     *
+     * @param  \Illuminate\Database\Schema\Blueprint  $blueprint
+     * @param  \Illuminate\Support\Fluent  $command
+     * @return list<string>
+     *
+     * @throws \LogicException
+     */
+    public function compileChange(Blueprint $blueprint, Fluent $command)
+    {
+        $column = $command->column;
+
+        $current = (new Collection($this->connection->getSchemaBuilder()->getColumns($blueprint->getTable())))
+            ->firstWhere('name', $column->name);
+
+        if (! $current) {
+            throw new \LogicException("Column [{$column->name}] does not exist.");
+        }
+
+        if ($column->type === 'enum') {
+            throw new \LogicException('This database driver does not support changing enum columns.');
+        }
+
+        if ($column->collation && strcasecmp($column->collation, (string) $current['collation']) !== 0) {
+            throw new \LogicException('This database driver does not support changing column collations.');
+        }
+
+        $alter = 'ALTER COLUMN '.$this->wrap($column).' ';
+        $changes = [];
+
+        $type = $this->getType($column).$this->modifyCharset($blueprint, $column);
+
+        $normalize = fn ($type) => strtolower(str_replace(' ', '', $type));
+
+        if ($column->charset || $normalize($type) !== $normalize($current['type'])) {
+            $changes[] = $alter.'TYPE '.$type;
+        }
+
+        if ($default = $this->modifyDefault($blueprint, $column)) {
+            $changes[] = $alter.'SET'.$default;
+        } elseif (! is_null($current['default']) && ! $current['auto_increment']) {
+            $changes[] = $alter.'DROP DEFAULT';
+        }
+
+        if ((bool) $column->nullable !== $current['nullable']) {
+            $changes[] = $alter.($column->nullable ? 'DROP' : 'SET').' NOT NULL';
+        }
+
+        return $changes ? ['ALTER TABLE '.$this->wrapTable($blueprint).' '.implode(', ', $changes)] : [];
     }
 
     /**

@@ -13,9 +13,22 @@ use PHPUnit\Framework\TestCase as BaseTestCase;
  */
 class SchemaGrammarTest extends BaseTestCase
 {
-    protected function compile(string $table, Closure $callback, bool $create = false, string $prefix = ''): array
+    /**
+     * @param  list<array<string, mixed>>  $columns  Raw rdb$ rows returned to schema introspection queries.
+     */
+    protected function compile(string $table, Closure $callback, bool $create = false, string $prefix = '', array $columns = []): array
     {
-        $connection = new FirebirdConnection(fn () => null, 'database', $prefix);
+        $connection = new class(fn () => null, 'database', $prefix) extends FirebirdConnection
+        {
+            public array $rows = [];
+
+            public function selectFromWriteConnection($query, $bindings = [])
+            {
+                return $this->rows;
+            }
+        };
+
+        $connection->rows = $columns;
         $connection->useDefaultSchemaGrammar();
 
         $blueprint = new Blueprint($connection, $table);
@@ -159,5 +172,33 @@ class SchemaGrammarTest extends BaseTestCase
             'alter table "orders" add constraint "orders_user_id_foreign" foreign key ("user_id") references "users" ("id") on delete no action on update no action',
             $sql[0]
         );
+    }
+
+    #[Test]
+    public function it_compiles_only_changed_column_attributes()
+    {
+        $columns = [
+            ['name' => 'id', 'field_type' => 16, 'field_sub_type' => 0, 'length' => null, 'precision' => 0, 'scale' => 0, 'charset' => null, 'collation' => null, 'not_null' => 1, 'default' => null, 'identity_type' => 1, 'computed' => null, 'comment' => null],
+            ['name' => 'name', 'field_type' => 37, 'field_sub_type' => 0, 'length' => 255, 'precision' => null, 'scale' => 0, 'charset' => 'UTF8', 'collation' => 'UTF8', 'not_null' => 1, 'default' => "DEFAULT 'x'", 'identity_type' => null, 'computed' => null, 'comment' => null],
+            ['name' => 'price', 'field_type' => 8, 'field_sub_type' => 2, 'length' => null, 'precision' => 8, 'scale' => -2, 'charset' => null, 'collation' => null, 'not_null' => 0, 'default' => null, 'identity_type' => null, 'computed' => null, 'comment' => null],
+        ];
+
+        $sql = $this->compile('users', function (Blueprint $table) {
+            $table->id()->change();
+            $table->string('name', 100)->nullable()->change();
+            $table->decimal('price', 8, 2)->nullable()->change();
+        }, columns: $columns);
+
+        $this->assertSame([
+            'ALTER TABLE "users" ALTER COLUMN "name" TYPE VARCHAR(100), ALTER COLUMN "name" DROP DEFAULT, ALTER COLUMN "name" DROP NOT NULL',
+        ], $sql);
+
+        $sql = $this->compile('users', function (Blueprint $table) {
+            $table->decimal('price', 10, 2)->default(0)->change();
+        }, columns: $columns);
+
+        $this->assertSame([
+            'ALTER TABLE "users" ALTER COLUMN "price" TYPE DECIMAL(10, 2), ALTER COLUMN "price" SET DEFAULT \'0\', ALTER COLUMN "price" SET NOT NULL',
+        ], $sql);
     }
 }

@@ -326,6 +326,39 @@ class SchemaTest extends TestCase
     }
 
     #[Test]
+    public function it_can_change_columns()
+    {
+        Schema::dropIfExists('foo');
+
+        Schema::create('foo', function (Blueprint $table) {
+            $table->id();
+            $table->string('name', 50)->default('x');
+            $table->decimal('price', 8, 2)->nullable();
+        });
+
+        DB::table('foo')->insert(['id' => 1, 'price' => 1.5]);
+
+        Schema::table('foo', function (Blueprint $table) {
+            $table->id()->change();
+            $table->string('name', 100)->nullable()->change();
+            $table->decimal('price', 10, 2)->default(0)->change();
+        });
+
+        $columns = collect(Schema::getColumns('foo'))->keyBy('name');
+
+        $this->assertTrue($columns['id']['auto_increment']);
+        $this->assertSame('varchar(100)', $columns['name']['type']);
+        $this->assertTrue($columns['name']['nullable']);
+        $this->assertNull($columns['name']['default']);
+        $this->assertSame('decimal(10,2)', $columns['price']['type']);
+        $this->assertFalse($columns['price']['nullable']);
+        $this->assertSame("'0'", $columns['price']['default']);
+
+        // Clean up...
+        Schema::drop('foo');
+    }
+
+    #[Test]
     public function it_throws_an_exception_for_creating_temporary_tables()
     {
         Schema::dropIfExists('foo');
