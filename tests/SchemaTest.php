@@ -235,6 +235,97 @@ class SchemaTest extends TestCase
     }
 
     #[Test]
+    public function it_gets_columns()
+    {
+        Schema::dropIfExists('foo');
+
+        Schema::create('foo', function (Blueprint $table) {
+            $table->id();
+            $table->string('name', 100)->default('x');
+            $table->decimal('price', 8, 2)->nullable();
+            $table->text('body')->nullable();
+            $table->timestamp('seen_at')->nullable();
+        });
+
+        $columns = collect(Schema::getColumns('foo'))->keyBy('name');
+
+        $this->assertSame(['id', 'name', 'price', 'body', 'seen_at'], $columns->keys()->all());
+
+        $this->assertSame('bigint', $columns['id']['type']);
+        $this->assertTrue($columns['id']['auto_increment']);
+        $this->assertFalse($columns['id']['nullable']);
+
+        $this->assertSame('varchar', $columns['name']['type_name']);
+        $this->assertSame('varchar(100)', $columns['name']['type']);
+        $this->assertSame("'x'", $columns['name']['default']);
+        $this->assertFalse($columns['name']['nullable']);
+        $this->assertFalse($columns['name']['auto_increment']);
+
+        $this->assertSame('decimal(8,2)', $columns['price']['type']);
+        $this->assertTrue($columns['price']['nullable']);
+        $this->assertNull($columns['price']['default']);
+
+        $this->assertSame('blob sub_type text', $columns['body']['type']);
+        $this->assertSame('timestamp', $columns['seen_at']['type']);
+
+        $this->assertSame('varchar', Schema::getColumnType('foo', 'name'));
+
+        // Clean up...
+        Schema::drop('foo');
+    }
+
+    #[Test]
+    public function it_gets_indexes()
+    {
+        Schema::dropIfExists('foo');
+
+        Schema::create('foo', function (Blueprint $table) {
+            $table->id();
+            $table->string('email');
+            $table->string('first');
+            $table->string('last');
+            $table->unique('email');
+            $table->index(['last', 'first']);
+        });
+
+        $indexes = collect(Schema::getIndexes('foo'))->keyBy('name');
+
+        $primary = $indexes->firstWhere('primary', true);
+        $this->assertSame(['id'], $primary['columns']);
+        $this->assertTrue($primary['unique']);
+
+        $this->assertSame(['email'], $indexes['foo_email_unique']['columns']);
+        $this->assertTrue($indexes['foo_email_unique']['unique']);
+        $this->assertFalse($indexes['foo_email_unique']['primary']);
+
+        $this->assertSame(['last', 'first'], $indexes['foo_last_first_index']['columns']);
+        $this->assertFalse($indexes['foo_last_first_index']['unique']);
+
+        $this->assertTrue(Schema::hasIndex('foo', ['email'], 'unique'));
+        $this->assertTrue(Schema::hasIndex('foo', 'foo_last_first_index'));
+        $this->assertFalse(Schema::hasIndex('foo', ['first']));
+
+        // Clean up...
+        Schema::drop('foo');
+    }
+
+    #[Test]
+    public function it_gets_foreign_keys()
+    {
+        $foreignKeys = Schema::getForeignKeys('orders');
+
+        $this->assertSame([[
+            'name' => 'orders_user_id_foreign',
+            'columns' => ['user_id'],
+            'foreign_schema' => null,
+            'foreign_table' => 'users',
+            'foreign_columns' => ['id'],
+            'on_update' => 'no action',
+            'on_delete' => 'no action',
+        ]], $foreignKeys);
+    }
+
+    #[Test]
     public function it_throws_an_exception_for_creating_temporary_tables()
     {
         Schema::dropIfExists('foo');

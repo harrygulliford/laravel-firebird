@@ -67,9 +67,71 @@ class FirebirdGrammar extends Grammar
     public function compileColumns($schema, $table)
     {
         return sprintf(
-            'select trim(trailing from rdb$field_name) as "name" '
-            .'from rdb$relation_fields where rdb$relation_name = %s '
-            .'order by rdb$field_position',
+            'select trim(rf.rdb$field_name) as "name", f.rdb$field_type as "field_type", '
+            .'f.rdb$field_sub_type as "field_sub_type", f.rdb$character_length as "length", '
+            .'f.rdb$field_precision as "precision", f.rdb$field_scale as "scale", '
+            .'trim(cs.rdb$character_set_name) as "charset", trim(co.rdb$collation_name) as "collation", '
+            .'coalesce(rf.rdb$null_flag, f.rdb$null_flag, 0) as "not_null", '
+            .'coalesce(rf.rdb$default_source, f.rdb$default_source) as "default", '
+            .'rf.rdb$identity_type as "identity_type", f.rdb$computed_source as "computed", '
+            .'rf.rdb$description as "comment" '
+            .'from rdb$relation_fields rf '
+            .'join rdb$fields f on f.rdb$field_name = rf.rdb$field_source '
+            .'left join rdb$character_sets cs on cs.rdb$character_set_id = f.rdb$character_set_id '
+            .'left join rdb$collations co on co.rdb$character_set_id = f.rdb$character_set_id '
+            .'and co.rdb$collation_id = coalesce(rf.rdb$collation_id, f.rdb$collation_id) '
+            .'where rf.rdb$relation_name = %s '
+            .'order by rf.rdb$field_position',
+            $this->quoteString($table),
+        );
+    }
+
+    /**
+     * Compile the query to determine the indexes.
+     *
+     * Returns one row per index column, grouped by the processor.
+     *
+     * @param  string|null  $schema
+     * @param  string  $table
+     * @return string
+     */
+    public function compileIndexes($schema, $table)
+    {
+        return sprintf(
+            'select trim(i.rdb$index_name) as "name", trim(s.rdb$field_name) as "column", '
+            .'i.rdb$unique_flag as "unique", trim(rc.rdb$constraint_type) as "constraint_type" '
+            .'from rdb$indices i '
+            .'left join rdb$index_segments s on s.rdb$index_name = i.rdb$index_name '
+            .'left join rdb$relation_constraints rc on rc.rdb$index_name = i.rdb$index_name '
+            .'where i.rdb$relation_name = %s and (i.rdb$system_flag is null or i.rdb$system_flag = 0) '
+            .'order by i.rdb$index_name, s.rdb$field_position',
+            $this->quoteString($table),
+        );
+    }
+
+    /**
+     * Compile the query to determine the foreign keys.
+     *
+     * Returns one row per foreign key column, grouped by the processor.
+     *
+     * @param  string|null  $schema
+     * @param  string  $table
+     * @return string
+     */
+    public function compileForeignKeys($schema, $table)
+    {
+        return sprintf(
+            'select trim(rc.rdb$constraint_name) as "name", trim(s.rdb$field_name) as "column", '
+            .'trim(uq.rdb$relation_name) as "foreign_table", trim(us.rdb$field_name) as "foreign_column", '
+            .'trim(ref.rdb$update_rule) as "on_update", trim(ref.rdb$delete_rule) as "on_delete" '
+            .'from rdb$relation_constraints rc '
+            .'join rdb$ref_constraints ref on ref.rdb$constraint_name = rc.rdb$constraint_name '
+            .'join rdb$relation_constraints uq on uq.rdb$constraint_name = ref.rdb$const_name_uq '
+            .'join rdb$index_segments s on s.rdb$index_name = rc.rdb$index_name '
+            .'join rdb$index_segments us on us.rdb$index_name = uq.rdb$index_name '
+            .'and us.rdb$field_position = s.rdb$field_position '
+            .'where rc.rdb$relation_name = %s and rc.rdb$constraint_type = \'FOREIGN KEY\' '
+            .'order by rc.rdb$constraint_name, s.rdb$field_position',
             $this->quoteString($table),
         );
     }
