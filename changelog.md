@@ -50,6 +50,7 @@ These previously generated invalid SQL or silently did nothing, and now throw a 
 - `dropColumn()`, `dropPrimary()`, `dropUnique()` and `dropIndex()`. These previously did nothing.
 - `change()` for altering a column's type, default and nullability. Only the attributes that differ from the existing column are altered.
 - Full `Schema::getColumns()` details (type, nullability, default, auto-increment, collation, comment, generation), plus `Schema::getIndexes()`, `Schema::getForeignKeys()` and `Schema::hasIndex()`.
+- Column and table comments (`->comment()` and `$table->comment()`), which were previously ignored. `Schema::getTables()` returns table comments.
 - `startingValue()` / `from()` on auto-increment columns (`START WITH`).
 - `tinyText()`, `year()` and `virtualAs()` (computed) columns.
 

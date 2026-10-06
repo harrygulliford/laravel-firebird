@@ -191,6 +191,9 @@ class SchemaGrammarTest extends BaseTestCase
 
         $this->assertSame([
             'ALTER TABLE "users" ALTER COLUMN "name" TYPE VARCHAR(100), ALTER COLUMN "name" DROP DEFAULT, ALTER COLUMN "name" DROP NOT NULL',
+            'COMMENT ON COLUMN "users"."id" IS NULL',
+            'COMMENT ON COLUMN "users"."name" IS NULL',
+            'COMMENT ON COLUMN "users"."price" IS NULL',
         ], $sql);
 
         $sql = $this->compile('users', function (Blueprint $table) {
@@ -199,6 +202,7 @@ class SchemaGrammarTest extends BaseTestCase
 
         $this->assertSame([
             'ALTER TABLE "users" ALTER COLUMN "price" TYPE DECIMAL(10, 2), ALTER COLUMN "price" SET DEFAULT \'0\', ALTER COLUMN "price" SET NOT NULL',
+            'COMMENT ON COLUMN "users"."price" IS NULL',
         ], $sql);
     }
 
@@ -281,5 +285,21 @@ class SchemaGrammarTest extends BaseTestCase
         }, create: true);
 
         $this->assertSame(['create table "users" ("a" BLOB SUB_TYPE TEXT NOT NULL, "b" BLOB SUB_TYPE TEXT NOT NULL)'], $sql);
+    }
+
+    #[Test]
+    public function it_compiles_comments()
+    {
+        $sql = $this->compile('users', function (Blueprint $table) {
+            $table->string('name')->comment("The user's name");
+            $table->string('email');
+            $table->comment('All users');
+        }, create: true);
+
+        $this->assertSame([
+            'create table "users" ("name" VARCHAR(255) NOT NULL, "email" VARCHAR(255) NOT NULL)',
+            'COMMENT ON TABLE "users" IS \'All users\'',
+            'COMMENT ON COLUMN "users"."name" IS \'The user\'\'s name\'',
+        ], $sql);
     }
 }

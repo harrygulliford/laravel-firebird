@@ -27,6 +27,13 @@ class FirebirdGrammar extends Grammar
     protected $serials = ['bigInteger', 'integer', 'mediumInteger', 'smallInteger', 'tinyInteger'];
 
     /**
+     * The commands to be executed outside of create or alter commands.
+     *
+     * @var string[]
+     */
+    protected $fluentCommands = ['Comment'];
+
+    /**
      * Compile the query to determine if the given table exists.
      *
      * @param  string|null  $schema
@@ -51,7 +58,7 @@ class FirebirdGrammar extends Grammar
      */
     public function compileTables($schema)
     {
-        return 'select trim(trailing from rdb$relation_name) as "name" '
+        return 'select trim(trailing from rdb$relation_name) as "name", rdb$description as "comment" '
             .'from rdb$relations '
             .'where rdb$relation_type = 0 '
             .'and (rdb$system_flag is null or rdb$system_flag = 0) '
@@ -399,6 +406,40 @@ class FirebirdGrammar extends Grammar
         }
 
         return $changes ? ['ALTER TABLE '.$this->wrapTable($blueprint).' '.implode(', ', $changes)] : [];
+    }
+
+    /**
+     * Compile a comment command.
+     *
+     * @param  \Illuminate\Database\Schema\Blueprint  $blueprint
+     * @param  \Illuminate\Support\Fluent  $command
+     * @return string|null
+     */
+    public function compileComment(Blueprint $blueprint, Fluent $command)
+    {
+        // A changed column without a comment has its existing comment removed.
+        if (! is_null($comment = $command->column->comment) || $command->column->change) {
+            return sprintf('COMMENT ON COLUMN %s.%s IS %s',
+                $this->wrapTable($blueprint),
+                $this->wrap($command->column->name),
+                is_null($comment) ? 'NULL' : $this->quoteString($comment)
+            );
+        }
+    }
+
+    /**
+     * Compile a table comment command.
+     *
+     * @param  \Illuminate\Database\Schema\Blueprint  $blueprint
+     * @param  \Illuminate\Support\Fluent  $command
+     * @return string
+     */
+    public function compileTableComment(Blueprint $blueprint, Fluent $command)
+    {
+        return sprintf('COMMENT ON TABLE %s IS %s',
+            $this->wrapTable($blueprint),
+            $this->quoteString($command->comment)
+        );
     }
 
     /**

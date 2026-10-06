@@ -495,6 +495,33 @@ class SchemaTest extends TestCase
     }
 
     #[Test]
+    public function it_adds_table_and_column_comments()
+    {
+        Schema::dropIfExists('foo');
+
+        Schema::create('foo', function (Blueprint $table) {
+            $table->string('name')->comment("The user's name");
+            $table->string('email');
+            $table->comment('All users');
+        });
+
+        $comments = collect(Schema::getColumns('foo'))->pluck('comment', 'name')->all();
+        $this->assertSame(['name' => "The user's name", 'email' => null], $comments);
+
+        $table = collect(Schema::getTables())->firstWhere('name', 'foo');
+        $this->assertSame('All users', $table['comment']);
+
+        Schema::table('foo', function (Blueprint $table) {
+            $table->string('name')->change();
+        });
+
+        $this->assertNull(collect(Schema::getColumns('foo'))->firstWhere('name', 'name')['comment']);
+
+        // Clean up...
+        Schema::drop('foo');
+    }
+
+    #[Test]
     public function it_throws_an_exception_for_creating_temporary_tables()
     {
         Schema::dropIfExists('foo');
