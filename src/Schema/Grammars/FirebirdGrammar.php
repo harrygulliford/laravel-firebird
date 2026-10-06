@@ -254,6 +254,122 @@ class FirebirdGrammar extends Grammar
     }
 
     /**
+     * Compile a drop primary key command.
+     *
+     * @param  \Illuminate\Database\Schema\Blueprint  $blueprint
+     * @param  \Illuminate\Support\Fluent  $command
+     * @return string
+     */
+    public function compileDropPrimary(Blueprint $blueprint, Fluent $command)
+    {
+        // Inline primary keys get a generated name (INTEG_*), so look it up.
+        return sprintf(
+            'execute block as declare c varchar(63); begin '
+            .'select trim(rdb$constraint_name) from rdb$relation_constraints '
+            .'where rdb$relation_name = %s and rdb$constraint_type = \'PRIMARY KEY\' into :c; '
+            .'execute statement %s || c || \'"\'; end',
+            $this->quoteString($this->getPrefixedTable($blueprint)),
+            $this->quoteString('ALTER TABLE '.$this->wrapTable($blueprint).' DROP CONSTRAINT "'),
+        );
+    }
+
+    /**
+     * Compile a drop unique key command.
+     *
+     * @param  \Illuminate\Database\Schema\Blueprint  $blueprint
+     * @param  \Illuminate\Support\Fluent  $command
+     * @return string
+     */
+    public function compileDropUnique(Blueprint $blueprint, Fluent $command)
+    {
+        return sprintf('ALTER TABLE %s DROP CONSTRAINT %s',
+            $this->wrapTable($blueprint),
+            $this->wrap($command->index)
+        );
+    }
+
+    /**
+     * Compile a drop index command.
+     *
+     * @param  \Illuminate\Database\Schema\Blueprint  $blueprint
+     * @param  \Illuminate\Support\Fluent  $command
+     * @return string
+     */
+    public function compileDropIndex(Blueprint $blueprint, Fluent $command)
+    {
+        return 'DROP INDEX '.$this->wrap($command->index);
+    }
+
+    /**
+     * Compile a drop column command.
+     *
+     * @param  \Illuminate\Database\Schema\Blueprint  $blueprint
+     * @param  \Illuminate\Support\Fluent  $command
+     * @return string
+     */
+    public function compileDropColumn(Blueprint $blueprint, Fluent $command)
+    {
+        $columns = $this->prefixArray('DROP', $this->wrapArray($command->columns));
+
+        return 'ALTER TABLE '.$this->wrapTable($blueprint).' '.implode(', ', $columns);
+    }
+
+    /**
+     * Compile a rename column command.
+     *
+     * @param  \Illuminate\Database\Schema\Blueprint  $blueprint
+     * @param  \Illuminate\Support\Fluent  $command
+     * @return string
+     */
+    public function compileRenameColumn(Blueprint $blueprint, Fluent $command)
+    {
+        return sprintf('ALTER TABLE %s ALTER COLUMN %s TO %s',
+            $this->wrapTable($blueprint),
+            $this->wrap($command->from),
+            $this->wrap($command->to)
+        );
+    }
+
+    /**
+     * Compile a rename table command.
+     *
+     * @param  \Illuminate\Database\Schema\Blueprint  $blueprint
+     * @param  \Illuminate\Support\Fluent  $command
+     * @return never
+     *
+     * @throws \LogicException
+     */
+    public function compileRename(Blueprint $blueprint, Fluent $command)
+    {
+        throw new \LogicException('This database driver does not support renaming tables.');
+    }
+
+    /**
+     * Compile a rename index command.
+     *
+     * @param  \Illuminate\Database\Schema\Blueprint  $blueprint
+     * @param  \Illuminate\Support\Fluent  $command
+     * @return never
+     *
+     * @throws \LogicException
+     */
+    public function compileRenameIndex(Blueprint $blueprint, Fluent $command)
+    {
+        throw new \LogicException('This database driver does not support renaming indexes.');
+    }
+
+    /**
+     * Get the table name with the connection's table prefix, as stored in the system tables.
+     *
+     * @param  \Illuminate\Database\Schema\Blueprint  $blueprint
+     * @return string
+     */
+    protected function getPrefixedTable(Blueprint $blueprint)
+    {
+        return $this->connection->getTablePrefix().$blueprint->getTable();
+    }
+
+    /**
      * Get the SQL for a character set column modifier.
      *
      * @param  \Illuminate\Database\Schema\Blueprint  $blueprint

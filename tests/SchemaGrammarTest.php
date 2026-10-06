@@ -86,4 +86,35 @@ class SchemaGrammarTest extends BaseTestCase
             'ALTER TABLE "users" ADD "b" INTEGER',
         ], $sql);
     }
+
+    #[Test]
+    public function it_compiles_drop_and_rename_commands()
+    {
+        $sql = $this->compile('users', function (Blueprint $table) {
+            $table->dropUnique(['email']);
+            $table->dropIndex(['name']);
+            $table->dropColumn(['a', 'b']);
+            $table->renameColumn('c', 'd');
+            $table->dropPrimary();
+        });
+
+        $this->assertSame([
+            'ALTER TABLE "users" DROP CONSTRAINT "users_email_unique"',
+            'DROP INDEX "users_name_index"',
+            'ALTER TABLE "users" DROP "a", DROP "b"',
+            'ALTER TABLE "users" ALTER COLUMN "c" TO "d"',
+            'execute block as declare c varchar(63); begin '
+            .'select trim(rdb$constraint_name) from rdb$relation_constraints '
+            .'where rdb$relation_name = \'users\' and rdb$constraint_type = \'PRIMARY KEY\' into :c; '
+            .'execute statement \'ALTER TABLE "users" DROP CONSTRAINT "\' || c || \'"\'; end',
+        ], $sql);
+    }
+
+    #[Test]
+    public function it_throws_for_renaming_tables()
+    {
+        $this->expectException(\LogicException::class);
+
+        $this->compile('users', fn (Blueprint $table) => $table->rename('people'));
+    }
 }

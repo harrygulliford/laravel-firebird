@@ -169,6 +169,45 @@ class SchemaTest extends TestCase
     }
 
     #[Test]
+    public function it_can_drop_and_rename_columns_and_indexes()
+    {
+        Schema::dropIfExists('foo');
+
+        Schema::create('foo', function (Blueprint $table) {
+            $table->id();
+            $table->string('email')->unique();
+            $table->string('name')->index();
+            $table->string('a');
+            $table->string('b');
+            $table->string('c');
+        });
+
+        $countIndexes = fn () => DB::scalar(
+            'select count(*) from rdb$indices where rdb$relation_name = \'foo\''
+        );
+
+        // Primary key, unique and plain index.
+        $this->assertEquals(3, $countIndexes());
+
+        Schema::table('foo', function (Blueprint $table) {
+            $table->dropUnique(['email']);
+            $table->dropIndex(['name']);
+            $table->dropPrimary();
+            $table->dropColumn(['a', 'b']);
+            $table->renameColumn('c', 'd');
+        });
+
+        $this->assertEquals(0, $countIndexes());
+        $this->assertFalse(Schema::hasColumn('foo', 'a'));
+        $this->assertFalse(Schema::hasColumn('foo', 'b'));
+        $this->assertFalse(Schema::hasColumn('foo', 'c'));
+        $this->assertTrue(Schema::hasColumn('foo', 'd'));
+
+        // Clean up...
+        Schema::drop('foo');
+    }
+
+    #[Test]
     public function it_throws_an_exception_for_creating_temporary_tables()
     {
         Schema::dropIfExists('foo');
