@@ -736,7 +736,8 @@ class FirebirdGrammar extends Grammar
      */
     protected function typeFloat(Fluent $column)
     {
-        return 'FLOAT';
+        // A precision of 1-24 is single precision, 25-53 is double precision.
+        return $column->precision ? "FLOAT({$column->precision})" : 'FLOAT';
     }
 
     /**
@@ -904,6 +905,10 @@ class FirebirdGrammar extends Grammar
      */
     protected function typeBinary(Fluent $column)
     {
+        if ($column->length) {
+            return ($column->fixed ? 'BINARY' : 'VARBINARY')."({$column->length})";
+        }
+
         return 'BLOB SUB_TYPE BINARY';
     }
 

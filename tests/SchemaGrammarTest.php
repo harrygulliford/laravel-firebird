@@ -223,4 +223,21 @@ class SchemaGrammarTest extends BaseTestCase
 
         $this->compile('users', fn (Blueprint $table) => $table->integer('c')->storedAs('1'), create: true);
     }
+
+    #[Test]
+    public function it_compiles_float_precision_and_binary_lengths()
+    {
+        $sql = $this->compile('users', function (Blueprint $table) {
+            $table->float('a');
+            $table->float('b', 10);
+            $table->binary('c');
+            $table->binary('d', 16, fixed: true);
+            $table->binary('e', 100);
+        }, create: true);
+
+        $this->assertSame([
+            'create table "users" ("a" FLOAT(53) NOT NULL, "b" FLOAT(10) NOT NULL, "c" BLOB SUB_TYPE BINARY NOT NULL, '
+            .'"d" BINARY(16) NOT NULL, "e" VARBINARY(100) NOT NULL)',
+        ], $sql);
+    }
 }

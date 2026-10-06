@@ -388,6 +388,33 @@ class SchemaTest extends TestCase
     }
 
     #[Test]
+    public function it_creates_float_and_binary_columns()
+    {
+        Schema::dropIfExists('foo');
+
+        Schema::create('foo', function (Blueprint $table) {
+            $table->float('a');
+            $table->float('b', 10);
+            $table->binary('c');
+            $table->binary('d', 16, fixed: true);
+            $table->binary('e', 100);
+        });
+
+        $types = collect(Schema::getColumns('foo'))->pluck('type', 'name')->all();
+
+        $this->assertSame([
+            'a' => 'double precision',
+            'b' => 'float',
+            'c' => 'blob sub_type binary',
+            'd' => 'binary(16)',
+            'e' => 'varbinary(100)',
+        ], $types);
+
+        // Clean up...
+        Schema::drop('foo');
+    }
+
+    #[Test]
     public function it_throws_an_exception_for_creating_temporary_tables()
     {
         Schema::dropIfExists('foo');
