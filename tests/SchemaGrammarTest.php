@@ -72,4 +72,18 @@ class SchemaGrammarTest extends BaseTestCase
             .'"note" VARCHAR(255))',
         ], $sql);
     }
+
+    #[Test]
+    public function it_compiles_one_statement_per_added_column()
+    {
+        $sql = $this->compile('users', function (Blueprint $table) {
+            $table->string('a');
+            $table->integer('b')->nullable();
+        });
+
+        $this->assertSame([
+            'ALTER TABLE "users" ADD "a" VARCHAR(255) NOT NULL',
+            'ALTER TABLE "users" ADD "b" INTEGER',
+        ], $sql);
+    }
 }

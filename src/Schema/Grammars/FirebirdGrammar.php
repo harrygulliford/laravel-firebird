@@ -143,11 +143,10 @@ class FirebirdGrammar extends Grammar
      */
     public function compileAdd(Blueprint $blueprint, Fluent $command)
     {
-        $table = $this->wrapTable($blueprint);
-
-        $columns = $this->prefixArray('ADD', $this->getColumns($blueprint));
-
-        return 'ALTER TABLE '.$table.' '.implode(', ', $columns);
+        return sprintf('ALTER TABLE %s ADD %s',
+            $this->wrapTable($blueprint),
+            $this->getColumn($blueprint, $command->column)
+        );
     }
 
     /**

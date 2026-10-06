@@ -153,6 +153,22 @@ class SchemaTest extends TestCase
     }
 
     #[Test]
+    public function it_can_add_multiple_columns()
+    {
+        DB::select('RECREATE TABLE "foo" ("id" INTEGER NOT NULL)');
+
+        Schema::table('foo', function (Blueprint $table) {
+            $table->string('a');
+            $table->integer('b')->nullable();
+        });
+
+        $this->assertTrue(Schema::hasColumns('foo', ['id', 'a', 'b']));
+
+        // Clean up...
+        Schema::drop('foo');
+    }
+
+    #[Test]
     public function it_throws_an_exception_for_creating_temporary_tables()
     {
         Schema::dropIfExists('foo');
