@@ -101,6 +101,23 @@ class SchemaTest extends TestCase
     }
 
     #[Test]
+    public function it_can_create_a_table_with_an_identity_primary_key()
+    {
+        Schema::dropIfExists('foo');
+
+        Schema::create('foo', function (Blueprint $table) {
+            $table->id();
+            $table->string('bar');
+        });
+
+        $this->assertSame(1, DB::table('foo')->insertGetId(['bar' => 'a']));
+        $this->assertSame(2, DB::table('foo')->insertGetId(['bar' => 'b']));
+
+        // Clean up...
+        Schema::drop('foo');
+    }
+
+    #[Test]
     public function it_throws_an_exception_for_creating_temporary_tables()
     {
         Schema::dropIfExists('foo');
