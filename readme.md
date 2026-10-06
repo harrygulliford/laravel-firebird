@@ -13,6 +13,8 @@ This package adds support for the Firebird PDO Database Driver in Laravel applic
 - **Laravel:** 13
 - **Firebird:** 5
 
+Time zone column types (`timestampTz()` etc.) require pdo_firebird built against a Firebird 4+ client library.
+
 ## Installation
 
 You can install the package via composer:
