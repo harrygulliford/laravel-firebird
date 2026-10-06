@@ -420,7 +420,8 @@ class SchemaTest extends TestCase
         // pdo_firebird only handles time zone types when built against a Firebird 4+ client.
         $client = DB::connection()->getPdo()->getAttribute(\PDO::ATTR_CLIENT_VERSION);
 
-        if (preg_match('/V(\d+)\./', $client, $matches) && $matches[1] < 4) {
+        // e.g. "LI-V6.3.11.33703 Firebird 3.0"
+        if (preg_match('/Firebird (\d+)/', $client, $matches) && $matches[1] < 4) {
             $this->markTestSkipped("Time zone types require a Firebird 4+ client library, found [{$client}].");
         }
 
