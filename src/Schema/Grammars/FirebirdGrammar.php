@@ -128,9 +128,9 @@ class FirebirdGrammar extends Grammar
     {
         return sprintf(
             'execute block as begin if (exists(select 1 from rdb$relations where rdb$relation_name = %s and rdb$relation_type = 0 and '
-            .'(rdb$system_flag is null or rdb$system_flag = 0))) then execute statement \'drop table %s\'; end',
-            $this->quoteString($blueprint->getTable()),
-            $this->wrapTable($blueprint)
+            .'(rdb$system_flag is null or rdb$system_flag = 0))) then execute statement %s; end',
+            $this->quoteString($this->getPrefixedTable($blueprint)),
+            $this->quoteString('drop table '.$this->wrapTable($blueprint))
         );
     }
 

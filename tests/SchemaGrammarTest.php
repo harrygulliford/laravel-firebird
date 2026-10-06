@@ -135,4 +135,16 @@ class SchemaGrammarTest extends BaseTestCase
             'ALTER TABLE "a_rather_long_table_name" DROP CONSTRAINT "a_rather_long_table_name_another_long_user_id_foreign"',
         ], $sql);
     }
+
+    #[Test]
+    public function it_checks_the_prefixed_table_when_dropping_if_exists()
+    {
+        $sql = $this->compile('users', fn (Blueprint $table) => $table->dropIfExists(), prefix: 'p_');
+
+        $this->assertSame(
+            'execute block as begin if (exists(select 1 from rdb$relations where rdb$relation_name = \'p_users\' and rdb$relation_type = 0 and '
+            .'(rdb$system_flag is null or rdb$system_flag = 0))) then execute statement \'drop table "p_users"\'; end',
+            $sql[0]
+        );
+    }
 }
