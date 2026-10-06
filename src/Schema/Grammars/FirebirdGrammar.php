@@ -81,6 +81,17 @@ class FirebirdGrammar extends Grammar
     }
 
     /**
+     * Compile the query to determine which relations each view selects from.
+     *
+     * @return string
+     */
+    public function compileViewDependencies()
+    {
+        return 'select distinct trim(rdb$dependent_name) as "view", trim(rdb$depended_on_name) as "depends_on" '
+            .'from rdb$dependencies where rdb$dependent_type = 1';
+    }
+
+    /**
      * Compile the command to drop all foreign keys of user tables.
      *
      * @return string

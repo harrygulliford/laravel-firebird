@@ -2,7 +2,6 @@
 
 namespace HarryGulliford\Firebird\Schema;
 
-use Illuminate\Database\QueryException;
 use Illuminate\Database\Schema\Builder as BaseBuilder;
 
 class Builder extends BaseBuilder
@@ -32,31 +31,27 @@ class Builder extends BaseBuilder
      * Drop all views from the database.
      *
      * @return void
-     *
-     * @throws \Illuminate\Database\QueryException
      */
     public function dropAllViews()
     {
         $views = array_column($this->getViews(), 'name');
 
-        // Views can depend on other views, so keep dropping the ones that can be
-        // dropped until none are left, or no further progress can be made.
+        $dependencies = [];
+
+        foreach ($this->connection->selectFromWriteConnection($this->grammar->compileViewDependencies()) as $row) {
+            $dependencies[$row->view][] = $row->depends_on;
+        }
+
+        // Views can select from other views, so drop the views that nothing
+        // remaining depends on first. Views can't have circular dependencies.
         while ($views) {
-            $failed = [];
+            $dependedOn = array_merge(...array_map(fn ($view) => $dependencies[$view] ?? [], $views));
 
-            foreach ($views as $view) {
-                try {
-                    $this->connection->statement('DROP VIEW '.$this->grammar->wrap($view));
-                } catch (QueryException $e) {
-                    $failed[] = $view;
-                }
+            foreach (array_diff($views, $dependedOn) as $view) {
+                $this->connection->statement('DROP VIEW '.$this->grammar->wrap($view));
             }
 
-            if (count($failed) === count($views)) {
-                throw $e;
-            }
-
-            $views = $failed;
+            $views = array_values(array_intersect($views, $dependedOn));
         }
     }
 }
